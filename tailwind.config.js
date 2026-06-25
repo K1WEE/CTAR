@@ -42,9 +42,12 @@ module.exports = {
         'scale-up': 'scale-up 300ms ease-out both',
       },
       colors: {
-        'brand-dark': '#0B1120',
-        'brand-card': 'rgba(30, 41, 59, 0.7)',
-        'brand-accent': '#3b82f6',
+        // Calm clinical dark surfaces. brand-dark is the dark-mode page body;
+        // brand-card sits one step lighter for panels. Both are fully opaque —
+        // the product brief calls for solid backgrounds, not frosted glass.
+        'brand-dark': '#0f172a',   // slate-900, replaces the cyberpunk navy #0B1120
+        'brand-card': '#1e293b',   // slate-800, solid (was rgba 0.7 glass)
+        'brand-accent': '#3b82f6', // clinical blue, unchanged for brand continuity
       }
     },
   },

@@ -13,26 +13,26 @@ import { TaskService } from '../../services/task.service';
   imports: [CommonModule],
   template: `
     <div class="min-h-screen p-4 flex items-center justify-center">
-      <div class="max-w-2xl w-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-8 shadow-2xl border border-white/20">
+      <div class="max-w-2xl w-full bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-md border border-slate-200 dark:border-slate-700">
         
         <div class="text-center mb-8">
           <div class="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-200 dark:border-emerald-500/30">
             <i class="fa-solid fa-trophy text-4xl"></i>
           </div>
           <h2 class="text-3xl font-extrabold text-slate-800 dark:text-white mb-2">{{ i18n.t('summary.title') }}</h2>
-          <p class="text-slate-500 dark:text-slate-400 text-lg">{{ i18n.t('summary.subtitle') }}</p>
+          <p class="text-slate-600 dark:text-slate-300 text-lg">{{ i18n.t('summary.subtitle') }}</p>
         </div>
 
         <div *ngIf="isSaving" class="text-center py-8">
           <i class="fa-solid fa-spinner fa-spin text-4xl text-brand-accent mb-4"></i>
-          <p class="text-slate-500 text-base">{{ i18n.t('summary.saving') }}</p>
+          <p class="text-slate-600 dark:text-slate-300 text-base">{{ i18n.t('summary.saving') }}</p>
         </div>
 
         <div *ngIf="!isSaving" class="space-y-6 animate-fade-in">
           
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5 text-center">
-              <div class="text-slate-500 text-base font-medium mb-1">{{ i18n.t('summary.duration') }}</div>
+            <div class="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+              <div class="text-slate-600 dark:text-slate-300 text-base font-medium mb-1">{{ i18n.t('summary.duration') }}</div>
               <div class="text-3xl font-bold text-slate-800 dark:text-white">{{ currentStats.duration }}s</div>
               <div class="text-sm mt-2" [ngClass]="getImprovementColor(improvement.duration)">
                 <i class="fa-solid" [ngClass]="getImprovementIcon(improvement.duration)"></i>
@@ -40,8 +40,8 @@ import { TaskService } from '../../services/task.service';
               </div>
             </div>
             
-            <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5 text-center">
-              <div class="text-slate-500 text-base font-medium mb-1">{{ i18n.t('summary.reps') }}</div>
+            <div class="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+              <div class="text-slate-600 dark:text-slate-300 text-base font-medium mb-1">{{ i18n.t('summary.reps') }}</div>
               <div class="text-3xl font-bold text-slate-800 dark:text-white">{{ currentStats.reps }}</div>
               <div class="text-sm mt-2" [ngClass]="getImprovementColor(improvement.reps)">
                 <i class="fa-solid" [ngClass]="getImprovementIcon(improvement.reps)"></i>
@@ -49,8 +49,8 @@ import { TaskService } from '../../services/task.service';
               </div>
             </div>
 
-            <div class="bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-white/5 text-center">
-              <div class="text-slate-500 text-base font-medium mb-1">{{ i18n.t('summary.peakForce') }}</div>
+            <div class="bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 text-center">
+              <div class="text-slate-600 dark:text-slate-300 text-base font-medium mb-1">{{ i18n.t('summary.peakForce') }}</div>
               <div class="text-3xl font-bold text-slate-800 dark:text-white">{{ currentStats.maxForce | number:'1.0-1' }} N</div>
               <div class="text-sm mt-2" [ngClass]="getImprovementColor(improvement.maxForce)">
                 <i class="fa-solid" [ngClass]="getImprovementIcon(improvement.maxForce)"></i>
@@ -66,7 +66,7 @@ import { TaskService } from '../../services/task.service';
           <div class="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 text-center">
             <button 
               (click)="finish()"
-              class="px-8 min-h-[56px] bg-brand-accent hover:bg-indigo-600 text-white font-medium text-lg rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105">
+              class="px-8 min-h-[56px] bg-brand-accent hover:bg-blue-700 text-white font-semibold text-lg rounded-xl shadow-sm transition-colors duration-200">
               {{ i18n.t('summary.done') }}
             </button>
           </div>
@@ -165,7 +165,7 @@ export class SummaryComponent implements OnInit {
   getImprovementColor(val: number) {
     if (val > 0) return 'text-emerald-500';
     if (val < 0) return 'text-rose-500';
-    return 'text-slate-400';
+    return 'text-slate-500 dark:text-slate-400';
   }
 
   getImprovementIcon(val: number) {

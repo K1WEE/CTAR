@@ -31,36 +31,31 @@ interface SessionRecord {
         <main class="animate-fade-in space-y-6">
           
           <!-- Hero Welcome & Quick Start Combined Card -->
-          <div class="bg-gradient-to-br from-indigo-600 via-indigo-700 to-blue-600 rounded-3xl p-8 shadow-xl shadow-indigo-500/25 text-white relative overflow-hidden group">
-            <!-- Glowing background elements -->
-            <div class="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-[80px] pointer-events-none"></div>
-            <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-blue-400/20 rounded-full blur-[90px] pointer-events-none"></div>
-            <div class="absolute -bottom-10 -right-10 opacity-15 pointer-events-none group-hover:scale-110 transition-transform duration-700">
-              <i class="fa-solid fa-gamepad text-9xl"></i>
-            </div>
+          <!-- One solid clinical-blue surface (the single "committed" colour panel
+               in the patient flow). No gradient, glow, or watermark: the brief asks
+               for solid backgrounds that keep cognitive load low. -->
+          <div class="bg-blue-700 rounded-3xl p-8 shadow-sm text-white relative overflow-hidden">
 
             <!-- Layout Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-6 items-center">
               <!-- Welcome Text (spans 3 columns on large screens) -->
               <div class="lg:col-span-3 space-y-2.5">
                 <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
                   {{ i18n.currentLang() === 'th' ? 'สวัสดี' : 'Hello' }}{{ patientName() ? ', ' + patientName() : '' }} 👋
                 </h2>
-                <p class="text-indigo-100 text-base sm:text-lg font-medium max-w-lg leading-relaxed">
+                <p class="text-blue-100 text-base sm:text-lg font-medium max-w-lg leading-relaxed">
                   {{ i18n.currentLang() === 'th' ? 'พร้อมที่จะเริ่มฝึกกล้ามเนื้อการกลืนของคุณหรือยัง?' : 'Ready to train your swallowing muscles today?' }}
                 </p>
                 
                 <!-- Device connection status badge -->
                 <div class="pt-1.5">
-                  <span 
-                    [class]="bleService.connectionState() === 'Connected' 
-                      ? 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 border border-emerald-400/30 text-emerald-200 shadow-sm' 
-                      : 'inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-white/10 border border-white/20 text-indigo-100 shadow-sm'"
+                  <span
+                    [class]="bleService.connectionState() === 'Connected'
+                      ? 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-emerald-500/25 border border-emerald-300/40 text-emerald-100'
+                      : 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-bold bg-white/15 border border-white/25 text-blue-100'"
                   >
                     <span class="relative flex h-2 w-2">
-                      <!-- Pulse only while connected; a permanently pinging dot draws the eye for no reason -->
-                      <span *ngIf="bleService.connectionState() === 'Connected'" class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-emerald-400"></span>
-                      <span class="relative inline-flex rounded-full h-2 w-2" [class.bg-emerald-500]="bleService.connectionState() === 'Connected'" [class.bg-white]="bleService.connectionState() !== 'Connected'"></span>
+                      <span class="relative inline-flex rounded-full h-2 w-2" [class.bg-emerald-300]="bleService.connectionState() === 'Connected'" [class.bg-white]="bleService.connectionState() !== 'Connected'"></span>
                     </span>
                     {{ bleService.connectionState() === 'Connected' 
                       ? (i18n.currentLang() === 'th' ? 'เชื่อมต่ออุปกรณ์แล้ว' : 'Device Connected') 
@@ -71,17 +66,17 @@ interface SessionRecord {
 
               <!-- Action Button Container (spans 2 columns on large screens) -->
               <div class="lg:col-span-2 flex flex-col w-full">
-                <button 
+                <button
                   [routerLink]="getPlayButtonLink()"
-                  class="relative w-full min-h-[58px] bg-white text-indigo-600 hover:bg-slate-50 font-extrabold text-lg rounded-2xl transition-all duration-300 shadow-xl flex items-center justify-center transform hover:scale-[1.01] active:scale-[0.99]">
+                  class="relative w-full min-h-[58px] bg-white text-blue-700 hover:bg-blue-50 font-extrabold text-lg rounded-2xl transition-colors duration-200 shadow-sm flex items-center justify-center active:scale-[0.99]">
                   <i class="fa-solid mr-2 text-xl" [ngClass]="getPlayButtonIcon()" aria-hidden="true"></i>
                   {{ getPlayButtonText() }}
                 </button>
-                
-                <button 
+
+                <button
                   *ngIf="isCalibrated()"
                   routerLink="/calibrate"
-                  class="mt-3 w-full min-h-[44px] bg-indigo-500/20 hover:bg-indigo-500/35 text-white font-semibold text-sm rounded-xl border border-indigo-400/30 transition-all duration-300 flex items-center justify-center transform hover:scale-[1.01] active:scale-[0.99]">
+                  class="mt-3 w-full min-h-[44px] bg-white/15 hover:bg-white/25 text-white font-semibold text-sm rounded-xl border border-white/25 transition-colors duration-200 flex items-center justify-center active:scale-[0.99]">
                   <i class="fa-solid fa-gauge-high mr-2"></i>
                   {{ i18n.currentLang() === 'th' ? 'ปรับค่าแรงกดใหม่ (Recalibrate)' : 'Recalibrate Force' }}
                 </button>
@@ -90,9 +85,9 @@ interface SessionRecord {
           </div>
 
           <!-- Loading placeholder: keeps the layout calm instead of empty widgets popping in -->
-          <div *ngIf="isLoading()" role="status" class="bg-white/80 dark:bg-brand-card backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-10 shadow-xl text-center">
-            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-indigo-400 mb-3" aria-hidden="true"></i>
-            <p class="font-bold text-slate-500 dark:text-slate-400">
+          <div *ngIf="isLoading()" role="status" class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl p-10 shadow-sm text-center">
+            <i class="fa-solid fa-circle-notch fa-spin text-2xl text-blue-500 mb-3" aria-hidden="true"></i>
+            <p class="font-bold text-slate-600 dark:text-slate-300">
               {{ i18n.currentLang() === 'th' ? 'กำลังโหลดข้อมูลการฝึกของคุณ...' : 'Loading your training data...' }}
             </p>
           </div>
@@ -107,8 +102,7 @@ interface SessionRecord {
           <div *ngIf="!isLoading()" class="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             <!-- Weekly Streak / Consistency Tracker -->
-            <div class="bg-white/80 dark:bg-brand-card backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-6 shadow-xl relative overflow-hidden flex flex-col justify-between h-full">
-              <div class="absolute -bottom-16 -left-16 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
+            <div class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm relative overflow-hidden flex flex-col justify-between h-full">
               <div>
                 <h3 class="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center">
                   <i class="fa-solid fa-calendar-check text-emerald-500 mr-2.5 text-xl"></i>
@@ -120,16 +114,16 @@ interface SessionRecord {
                     <!-- Circular Indicator: date number inside, weekday letter below (no duplication) -->
                     <div role="img" [attr.aria-label]="getDayAria(day)"
                       [class]="day.completed
-                        ? 'w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/30 font-bold border-2 border-emerald-400 relative transition-transform duration-300 hover:scale-110'
-                        : 'w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 text-slate-400 dark:text-slate-600 flex items-center justify-center font-semibold transition-colors'"
+                        ? 'w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm font-bold border-2 border-emerald-600 relative transition-transform duration-200 hover:scale-105'
+                        : 'w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center font-semibold transition-colors'"
                     >
-                      <i *ngIf="day.completed" class="fa-solid fa-check text-xs sm:text-sm" aria-hidden="true"></i>
-                      <span *ngIf="!day.completed" class="text-xs">{{ day.date.getDate() }}</span>
+                      <i *ngIf="day.completed" class="fa-solid fa-check text-sm sm:text-base" aria-hidden="true"></i>
+                      <span *ngIf="!day.completed" class="text-sm font-semibold">{{ day.date.getDate() }}</span>
                     </div>
-                    
+
                     <!-- Day label bottom -->
-                    <span 
-                      class="text-2xs sm:text-xs mt-2 font-medium text-slate-500 dark:text-slate-400 transition-colors" 
+                    <span
+                      class="text-xs sm:text-sm mt-2 font-semibold text-slate-600 dark:text-slate-300 transition-colors"
                       [class.text-emerald-500]="day.dayName !== ''" 
                       [class.font-extrabold]="day.dayName !== ''"
                     >
@@ -142,27 +136,27 @@ interface SessionRecord {
               <!-- Stats Row -->
               <div *ngIf="lastSession() as last" class="mt-6 pt-5 border-t border-slate-200 dark:border-white/5 relative z-10">
                 <div class="grid grid-cols-3 gap-3">
-                  <div class="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 p-3 rounded-2xl text-center shadow-sm">
-                    <span class="text-slate-500 dark:text-slate-400 font-extrabold text-xs block mb-1">
+                  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center">
+                    <span class="text-slate-600 dark:text-slate-300 font-bold text-sm block mb-1">
                       {{ i18n.currentLang() === 'th' ? 'แรงกดล่าสุด' : 'Latest Force' }}
                     </span>
-                    <span class="text-base sm:text-lg font-black text-emerald-500 block">
+                    <span class="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 block">
                       {{ last.max_force | number:'1.0-1' }}N
                     </span>
                   </div>
-                  <div class="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 p-3 rounded-2xl text-center shadow-sm">
-                    <span class="text-slate-500 dark:text-slate-400 font-extrabold text-xs block mb-1">
+                  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center">
+                    <span class="text-slate-600 dark:text-slate-300 font-bold text-sm block mb-1">
                       {{ i18n.currentLang() === 'th' ? 'รอบล่าสุด' : 'Latest Reps' }}
                     </span>
-                    <span class="text-base sm:text-lg font-black text-amber-500 block">
+                    <span class="text-base sm:text-lg font-black text-amber-600 dark:text-amber-400 block">
                       {{ last.reps }} {{ i18n.currentLang() === 'th' ? 'ครั้ง' : 'reps' }}
                     </span>
                   </div>
-                  <div class="bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-white/5 p-3 rounded-2xl text-center shadow-sm">
-                    <span class="text-slate-500 dark:text-slate-400 font-extrabold text-xs block mb-1">
+                  <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center">
+                    <span class="text-slate-600 dark:text-slate-300 font-bold text-sm block mb-1">
                       {{ i18n.currentLang() === 'th' ? 'เวลารวม' : 'Duration' }}
                     </span>
-                    <span class="text-base sm:text-lg font-black text-sky-500 block">
+                    <span class="text-base sm:text-lg font-black text-sky-600 dark:text-sky-400 block">
                       {{ formatDuration(last.duration_seconds) }}
                     </span>
                   </div>
@@ -170,7 +164,7 @@ interface SessionRecord {
               </div>
               
               <!-- Motivating message at the bottom -->
-              <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-4 text-center relative z-10 font-medium">
+              <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 mt-4 text-center relative z-10 font-medium text-pretty">
                 {{ getWeeklyStreakMessage() }}
               </p>
 
@@ -178,10 +172,10 @@ interface SessionRecord {
               <div class="md:hidden mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-center relative z-10">
                 <button
                   (click)="scrollToTasks()"
-                  class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all duration-200"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-extrabold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all duration-200"
                 >
                   <span>{{ i18n.currentLang() === 'th' ? 'ดูภารกิจประจำสัปดาห์ของคุณ' : 'View your weekly tasks' }}</span>
-                  <i class="fa-solid fa-arrow-down animate-bounce text-sm"></i>
+                  <i class="fa-solid fa-arrow-down text-sm"></i>
                 </button>
               </div>
             </div>
@@ -330,7 +324,7 @@ export class PatientPortalComponent implements OnInit {
     }
 
     return lang === 'th'
-      ? `สัปดาห์นี้คุณฝึกสำเร็จแล้ว ${completedCount} วัน! ทำต่อไปเพื่อสุขภาพที่ดีนะคุณตาคุณยาย ❤️`
+      ? `สัปดาห์นี้คุณฝึกสำเร็จแล้ว ${completedCount} วัน! ทำต่อไปเพื่อสุขภาพที่ดีนะ ❤️`
       : `You've completed ${completedCount} days of training this week! Keep it up for your health ❤️`;
   }
 

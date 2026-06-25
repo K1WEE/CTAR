@@ -30,14 +30,14 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
   template: `
     <div class="min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
       <!-- max-w-md on mobile expands the card's readability. min-h-[82vh] reduces vertical negative space on phone viewports -->
-      <div [@.disabled]="prefersReducedMotion" class="calibrate-card w-full max-w-md min-h-[82vh] sm:min-h-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/20 text-center relative overflow-hidden transition-colors duration-300 flex flex-col justify-between scrollbar-thin">
+      <div [@.disabled]="prefersReducedMotion" class="calibrate-card w-full max-w-md min-h-[82vh] sm:min-h-0 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200 dark:border-slate-700 text-center relative overflow-hidden transition-colors duration-300 flex flex-col justify-between scrollbar-thin">
         
         <!-- Header Actions -->
         <div class="flex items-center justify-between mb-4 shrink-0 relative z-10">
           <button (click)="goBack()"
             [attr.aria-label]="backButtonLabel()"
             [title]="backButtonLabel()"
-            class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors shrink-0 cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors shrink-0 cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             <i class="fa-solid text-base" [ngClass]="state() === 'intro' ? 'fa-arrow-left' : 'fa-rotate-left'" aria-hidden="true"></i>
           </button>
           
@@ -48,8 +48,8 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'">
             <i class="text-xl" 
                [ngClass]="bleService.connectionState() === 'Connected' 
-                 ? 'fa-solid fa-check text-emerald-600 dark:text-emerald-400' 
-                 : 'fa-brands fa-bluetooth-b animate-pulse text-blue-600 dark:text-blue-400'"></i>
+                 ? 'fa-solid fa-check text-emerald-600 dark:text-emerald-400'
+                 : 'fa-brands fa-bluetooth-b text-blue-600 dark:text-blue-400'"></i>
           </div>
           <div class="w-10 h-10"></div>
         </div>
@@ -59,7 +59,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
           <h2 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-2 leading-tight" role="status" aria-live="polite">{{ getPageStateTitle() }}</h2>
           
           <!-- Subtitle help text in active testing to remove bottom help cards -->
-          <p *ngIf="state() === 'pulling'" @panelSwap class="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mb-3 animate-pulse">
+          <p *ngIf="state() === 'pulling'" @panelSwap class="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mb-3">
             {{ i18n.currentLang() === 'th' ? 'ก้มคางกดลงค้างไว้ให้แรงที่สุด!' : 'Press and hold your chin down as hard as you can!' }}
           </p>
 
@@ -89,36 +89,14 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
             </div>
           </div>
 
-          <!-- WAITING PANEL: Pulsing waiting prompt -->
-          <div *ngIf="state() === 'waiting'" @panelSwap class="flex flex-col items-center w-full mb-2">
-            <div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl w-full shadow-sm">
-              <div class="flex items-center justify-center gap-1.5 text-amber-700 dark:text-amber-300 font-extrabold text-sm mb-1">
-                <i class="fa-solid fa-circle-notch fa-spin"></i>
-                <span>{{ i18n.currentLang() === 'th' ? 'เชื่อมต่อเครื่องมือแล้ว' : 'Device Connected' }}</span>
-              </div>
-              <p class="text-sm sm:text-base font-black text-amber-600 dark:text-amber-400 leading-relaxed">
-                {{ i18n.currentLang() === 'th' ? 'ก้มคางกดลงให้แรงที่สุด เพื่อเริ่มต้นจับเวลา...' : 'Press chin down firmly to start the timer...' }}
-              </p>
-
-              <!-- Live force feedback so the user knows their press is being detected before the 5N threshold -->
-              <div class="mt-3 text-left">
-                <div class="flex justify-between items-baseline text-xs font-bold text-amber-700 dark:text-amber-300 mb-1">
-                  <span>{{ i18n.currentLang() === 'th' ? 'แรงกดขณะนี้' : 'Current force' }}</span>
-                  <span class="tabular-nums">{{ ctar.currentForce() | number:'1.0-1' }} / 5.0 N</span>
-                </div>
-                <div class="w-full h-2.5 rounded-full bg-amber-200/60 dark:bg-amber-900/40 overflow-hidden">
-                  <div class="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-500 transition-all duration-150"
-                       [style.width.%]="waitingProgress()"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Shown when the device is connected but no force has arrived for a while -->
-            <div *ngIf="showWaitingHint()" @panelSwap role="alert"
-                 class="mt-2.5 bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 p-3 rounded-xl text-left text-sm font-bold w-full flex items-start gap-2">
-              <i class="fa-solid fa-circle-info text-base mt-0.5 shrink-0" aria-hidden="true"></i>
-              <span>{{ i18n.currentLang() === 'th' ? 'ยังไม่พบแรงกดจากอุปกรณ์ ลองตรวจสอบว่าสวมอุปกรณ์ถูกต้อง หรือกดคางลงอีกครั้ง' : 'No force detected yet. Check the device is positioned correctly, then press your chin down again.' }}</span>
-            </div>
+          <!-- WAITING state: the device is connected and the start-press is detected
+               silently in the background. The steps block, demo animation, and the
+               spoken cue already tell the user to press, so no progress box is shown.
+               Only this safety hint surfaces, and only after a stall with no force. -->
+          <div *ngIf="state() === 'waiting' && showWaitingHint()" @panelSwap role="alert"
+               class="mt-1 mb-2 bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 p-3 rounded-xl text-left text-sm font-bold w-full flex items-start gap-2">
+            <i class="fa-solid fa-circle-info text-base mt-0.5 shrink-0" aria-hidden="true"></i>
+            <span>{{ i18n.currentLang() === 'th' ? 'ยังไม่พบแรงกดจากอุปกรณ์ ลองตรวจสอบว่าสวมอุปกรณ์ถูกต้อง หรือกดคางลงอีกครั้ง' : 'No force detected yet. Check the device is positioned correctly, then press your chin down again.' }}</span>
           </div>
 
           <!-- PULLING PANEL: Active Strength Test (demo SVG lives in the persistent anchor above) -->
@@ -127,7 +105,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
             <!-- Highly Compact Inner Card (Without pink background color) -->
             <div class="w-full rounded-2xl p-5 mb-3 border-2 transition-all duration-300 shadow-sm flex flex-col items-center border-rose-200 dark:border-rose-900/30">
 
-              <p class="text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">
+              <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
                 {{ i18n.currentLang() === 'th' ? 'แรงกดขณะนี้' : 'Current Force' }}
               </p>
               
@@ -138,7 +116,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
               
               <!-- Timer Badge -->
               <div class="px-4 py-1.5 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 rounded-full font-black text-sm flex items-center gap-1.5 shadow-sm">
-                <i class="fa-regular fa-clock animate-pulse"></i>
+                <i class="fa-regular fa-clock"></i>
                 <span>{{ i18n.currentLang() === 'th' ? 'เวลาบันทึกแรง:' : 'Testing time:' }} {{ timeLeft() }}s</span>
               </div>
             </div>
@@ -147,7 +125,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
           <!-- FINISHED PANEL: Result + Auto Navigate (Highly Compact) -->
           <div *ngIf="state() === 'finished'" @panelSwap class="space-y-4 w-full pt-2 flex flex-col items-center justify-center">
             
-            <div class="text-slate-500 dark:text-slate-400 font-extrabold text-sm uppercase tracking-wider">
+            <div class="text-slate-600 dark:text-slate-300 font-extrabold text-sm uppercase tracking-wider">
               {{ i18n.currentLang() === 'th' ? 'แรงกดสูงสุดที่ทดสอบได้' : 'Peak Force Measured' }}
             </div>
             
@@ -157,7 +135,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
             </div>
 
             <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 max-w-sm mx-auto text-emerald-700 dark:text-emerald-400 text-sm font-bold flex items-center justify-center gap-2">
-              <i class="fa-solid fa-circle-check text-base animate-pulse text-emerald-500"></i>
+              <i class="fa-solid fa-circle-check text-base text-emerald-500"></i>
               <span>{{ i18n.currentLang() === 'th' ? 'บันทึกแรงกดสำเร็จ พร้อมเริ่มเล่นเกม' : 'Force calibrated successfully' }}</span>
             </div>
           </div>
@@ -181,13 +159,13 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
             
             <!-- Disconnection warning -->
             <div *ngIf="disconnectWarning" role="alert" class="mt-2.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-left text-sm font-bold w-full flex items-start gap-2">
-              <i class="fa-solid fa-circle-exclamation text-base mt-0.5 shrink-0 text-red-500 animate-pulse"></i>
+              <i class="fa-solid fa-circle-exclamation text-base mt-0.5 shrink-0 text-red-500"></i>
               <span>{{ i18n.currentLang() === 'th' ? 'การเชื่อมต่ออุปกรณ์ขาดหาย! กรุณาเชื่อมต่อใหม่อีกครั้ง' : 'Device disconnected! Please connect again.' }}</span>
             </div>
             
             <div *ngIf="bleService.error()" role="alert" class="mt-2.5 bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-xl text-left text-sm">
               <p class="font-bold flex items-center"><i class="fa-solid fa-circle-exclamation mr-1.5"></i> {{ i18n.t('error.title') }}</p>
-              <p class="mt-0.5 text-xs">{{ friendlyError(bleService.error()) }}</p>
+              <p class="mt-0.5 text-sm">{{ friendlyError(bleService.error()) }}</p>
             </div>
           </div>
 
@@ -203,7 +181,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
               [ngClass]="state() === 'pulling'
                 ? 'from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 focus-visible:ring-rose-300'
                 : 'from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 focus-visible:ring-amber-300'">
-              <i class="fa-solid fa-circle-chevron-down mr-2 text-base" [ngClass]="state() === 'pulling' ? 'animate-pulse' : 'animate-bounce'"></i>
+              <i class="fa-solid fa-circle-chevron-down mr-2 text-base"></i>
               {{ state() === 'pulling'
                 ? (i18n.currentLang() === 'th' ? 'กดค้างไว้ต่อเนื่อง...' : 'Keep holding...')
                 : (i18n.currentLang() === 'th' ? 'กดค้างตรงนี้เพื่อกดจำลองแรง' : 'Hold here to simulate force') }}
@@ -353,7 +331,7 @@ export class CalibrateComponent implements OnInit, OnDestroy {
 
     // Monitor force to trigger calibration. The 20Hz stream re-runs this
     // effect on every sample, so requiring the press to be sustained for
-    // 500ms filters out accidental spikes and gives the user a moment to
+    // 200ms filters out accidental spikes and gives the user a moment to
     // register that the test is about to begin.
     effect(() => {
       const force = this.ctar.currentForce();
@@ -361,10 +339,10 @@ export class CalibrateComponent implements OnInit, OnDestroy {
         this.thresholdHoldStart = null;
         return;
       }
-      if (force >= 5.0) {
+      if (force >= 2.0) {
         if (this.thresholdHoldStart === null) {
           this.thresholdHoldStart = Date.now();
-        } else if (Date.now() - this.thresholdHoldStart >= 500) {
+        } else if (Date.now() - this.thresholdHoldStart >= 200) {
           this.thresholdHoldStart = null;
           this.ngZone.run(() => {
             this.beginCalibration();
@@ -404,11 +382,6 @@ export class CalibrateComponent implements OnInit, OnDestroy {
         this.playVoice('calibrate_intro.mp3');
       }
     }, 600);
-  }
-
-  /** Progress (0-100) toward the 5N threshold that starts the test */
-  waitingProgress(): number {
-    return Math.min(100, (this.ctar.currentForce() / 5.0) * 100);
   }
 
   backButtonLabel(): string {
@@ -531,8 +504,12 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     this.biofeedback.playHoldComplete();
     this.state.set('finished');
     this.averagePeak = this.peaks.length > 0 ? this.peaks[0] : this.ctar.peakForce();
-    const safeMax = Math.max(10, this.averagePeak); 
+    const safeMax = Math.max(10, this.averagePeak);
     this.ctar.setCalibration(safeMax);
+
+    // Tell the next game session to show the "Get Ready" instructions once.
+    // Tied to calibration (not a permanent flag) so re-calibrating shows it again.
+    localStorage.setItem('ctar_show_game_intro', '1');
 
     // Clear existing timer if any
     if (this.autoNavTimer) {

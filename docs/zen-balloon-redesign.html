@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Zen Balloon — Redesign Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=Noto+Sans+Thai:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     Zen Balloon — redesign prototype
+     Standalone preview. Drag (mouse / finger) up-down in the tube
+     to simulate the squeeze force from the CTAR device.
+     Palette matches the production Tailwind tokens (slate / amber /
+     rose / emerald), tone: calm-clinical (Restrained).
+     ============================================================ */
+
+  :root {
+    /* neutrals */
+    --bg: #eef2f6;
+    --card: #ffffff;
+    --line: #e2e8f0;
+    --line-strong: #cbd5e1;
+    --ink: #0f172a;       /* slate-900 */
+    --ink-2: #334155;     /* slate-700 */
+    --muted: #64748b;     /* slate-500, 4.5:1 on white */
+    --tube: #f1f5f9;      /* slate-100 */
+    --tube-edge: #e2e8f0;
+
+    /* amber accent (target / hold) */
+    --amber: #f59e0b;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+    --amber-900: #78350f;
+    --amber-band: rgba(245, 158, 11, 0.16);
+    --amber-band-2: rgba(245, 158, 11, 0.28);
+
+    /* balloon */
+    --rose-600: #e11d48;
+    --rose-500: #f43f5e;
+    --pink-400: #fb7185;
+
+    /* states */
+    --emerald: #10b981;
+    --emerald-600: #059669;
+    --emerald-700: #047857;
+    --sky: #0ea5e9;
+    --sky-600: #0284c7;
+    --rose-flag: #e11d48;
+
+    /* z-index scale */
+    --z-glow: 1;
+    --z-content: 10;
+    --z-readout: 20;
+    --z-overlay: 40;
+    --z-toast: 60;
+
+    --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+    --radius: 28px;
+
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    height: 100%;
+  }
+
+  body {
+    font-family: "Inter", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(120% 80% at 50% -10%, #f8fafc 0%, var(--bg) 55%, #e6ebf1 100%);
+    color: var(--ink);
+    min-height: 100%;
+    display: grid;
+    place-items: center;
+    padding: clamp(8px, 3vw, 28px);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* ---------- Card shell ---------- */
+  .card {
+    position: relative;
+    width: 100%;
+    max-width: 460px;
+    height: min(92svh, 860px);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 12px 30px -12px rgba(15, 23, 42, 0.18);
+    padding: clamp(16px, 4vw, 26px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    isolation: isolate;
+    touch-action: none;
+  }
+
+  .glow {
+    position: absolute;
+    inset: auto -60px 30% auto;
+    width: 260px; height: 260px;
+    background: radial-gradient(circle, rgba(245,158,11,0.16), transparent 70%);
+    filter: blur(40px);
+    z-index: var(--z-glow);
+    pointer-events: none;
+    opacity: .9;
+  }
+
+  /* ---------- Header ---------- */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 16px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+    z-index: var(--z-content);
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .titles { min-width: 0; }
+  .titles h1 {
+    margin: 0;
+    font-size: clamp(1.05rem, 4.4vw, 1.3rem);
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    text-wrap: balance;
+    color: var(--ink);
+  }
+  .titles p {
+    margin: 2px 0 0;
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+  .icon-btn {
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--muted);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: background .2s, color .2s, border-color .2s, transform .12s var(--ease-out-quint);
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: #f8fafc; color: var(--ink); }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+  .icon-btn.sound-on { color: var(--amber-600); border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.06); }
+
+  .finish-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 0 16px; height: 46px;
+    border-radius: 14px;
+    border: 1px solid #fecdd3;
+    background: #fff1f2;
+    color: var(--rose-flag);
+    font-weight: 800;
+    font-size: .95rem;
+    cursor: pointer;
+    transition: background .2s, transform .12s var(--ease-out-quint);
+    white-space: nowrap;
+  }
+  .finish-btn:hover { background: #ffe4e6; }
+  .finish-btn:active { transform: scale(0.96); }
+  .finish-btn:focus-visible { outline: 3px solid #fda4af; outline-offset: 2px; }
+  .finish-btn span { display: none; }
+  @media (min-width: 380px) { .finish-btn span { display: inline; } }
+
+  /* ---------- Title row + reps pill ---------- */
+  .game-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    z-index: var(--z-content);
+  }
+  .game-title-row { display: flex; align-items: center; gap: 12px; }
+  .game-title-row .emblem {
+    width: 44px; height: 44px;
+    border-radius: 13px;
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.22);
+    display: grid; place-items: center;
+    color: var(--amber-600);
+  }
+  .game-title-row h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 6vw, 2rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+  }
+  .reps-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 16px;
+    border-radius: 999px;
+    background: rgba(245,158,11,0.10);
+    border: 1px solid rgba(245,158,11,0.22);
+    color: var(--amber-700);
+    font-weight: 800;
+    font-size: .95rem;
+  }
+  .reps-pill .count {
+    font-size: 1.3rem;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    color: var(--amber-700);
+    transition: transform .35s var(--ease-out-quint);
+  }
+  .reps-pill .count.bump { transform: scale(1.4); }
+  .reps-pill .total { color: var(--muted); font-size: .85rem; }
+
+  /* ---------- Play area ---------- */
+  .play {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    z-index: var(--z-content);
+    cursor: ns-resize;
+  }
+
+  /* force readout */
+  .readout {
+    position: absolute;
+    right: clamp(2px, 3vw, 18px);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+    z-index: var(--z-readout);
+    transition: color .2s;
+  }
+  .readout .label {
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .readout .value {
+    font-size: clamp(2.4rem, 12vw, 3.4rem);
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+    transition: color .2s;
+  }
+  .readout .value .unit { font-size: .45em; vertical-align: top; font-weight: 800; }
+  .readout.in-zone .value { color: var(--amber-600); text-shadow: 0 0 16px rgba(245,158,11,0.35); }
+  .readout.over .value { color: var(--rose-600); }
+  .readout.resting .label,
+  .readout.resting .value { color: var(--sky-600); }
+
+  /* The tube */
+  .tube {
+    position: relative;
+    width: clamp(96px, 26vw, 116px);
+    height: 92%;
+    background:
+      linear-gradient(180deg, #f8fafc, var(--tube));
+    border: 1px solid var(--tube-edge);
+    border-radius: 999px;
+    box-shadow: inset 0 2px 6px rgba(15,23,42,0.06), inset 0 -2px 6px rgba(15,23,42,0.04);
+    overflow: hidden;
+  }
+
+  /* subtle scale ticks */
+  .ticks { position: absolute; inset: 0; pointer-events: none; }
+  .ticks i {
+    position: absolute; left: 8px; right: 8px;
+    height: 1px; background: rgba(15,23,42,0.05);
+  }
+
+  /* target band */
+  .band {
+    position: absolute;
+    left: 0; right: 0;
+    background: linear-gradient(180deg, var(--amber-band-2), var(--amber-band));
+    border-top: 2px solid var(--amber-600);
+    border-bottom: 2px solid var(--amber-600);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: bottom .4s var(--ease-out-quint), height .4s var(--ease-out-quint),
+                box-shadow .25s, background .25s;
+    z-index: 2;
+  }
+  .band.active {
+    background: linear-gradient(180deg, rgba(245,158,11,0.40), rgba(245,158,11,0.26));
+    box-shadow: 0 0 26px rgba(245,158,11,0.45);
+  }
+  .band-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: .72rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: var(--amber-900);
+    background: rgba(255,255,255,0.72);
+    padding: 2px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .band-chip svg { width: 11px; height: 11px; }
+
+  /* rest (release) zone */
+  .rest-zone {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: linear-gradient(180deg, rgba(14,165,233,0.04), rgba(14,165,233,0.20));
+    border-top: 2px dashed rgba(14,165,233,0.7);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding-bottom: 10px;
+    z-index: 1;
+    transition: opacity .3s;
+  }
+  .rest-zone .chip {
+    font-size: .72rem; font-weight: 900; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--sky-600);
+  }
+
+  /* balloon */
+  .balloon-wrap {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    display: flex; justify-content: center;
+    z-index: 3;
+    transition: bottom .09s linear;
+    will-change: bottom;
+  }
+  .balloon {
+    position: relative;
+    width: clamp(58px, 16vw, 70px);
+    aspect-ratio: 5 / 6;
+    border-radius: 50% 50% 48% 48%;
+    background: radial-gradient(120% 100% at 35% 28%, var(--pink-400), var(--rose-500) 45%, var(--rose-600));
+    box-shadow: 0 6px 18px rgba(225,29,72,0.35), inset -3px -5px 10px rgba(159,18,57,0.35), inset 4px 4px 10px rgba(255,255,255,0.25);
+    display: grid; place-items: center;
+    transition: transform .3s var(--ease-out-quint), box-shadow .3s, outline-color .25s;
+    outline: 0 solid transparent;
+  }
+  /* knot + string */
+  .balloon::after {
+    content: "";
+    position: absolute;
+    bottom: -6px; left: 50%; transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 8px solid var(--rose-600);
+  }
+  .balloon-wrap .string {
+    position: absolute;
+    top: calc(100% - 4px);
+    width: 1.5px; height: 360px;
+    background: linear-gradient(180deg, rgba(148,163,184,0.7), transparent);
+  }
+  .balloon.in-zone {
+    transform: scale(1.08);
+    box-shadow: 0 8px 26px rgba(245,158,11,0.5), inset -3px -5px 10px rgba(159,18,57,0.3);
+    outline: 3px solid var(--amber);
+    outline-offset: 2px;
+  }
+  .balloon.resting {
+    background: radial-gradient(120% 100% at 35% 28%, #7dd3fc, #38bdf8 45%, var(--sky));
+    box-shadow: 0 6px 18px rgba(14,165,233,0.35), inset -3px -5px 10px rgba(2,132,199,0.35);
+  }
+  .balloon.resting::after { border-top-color: var(--sky-600); }
+  .face { width: 56%; height: 56%; color: #fff; opacity: .95; }
+
+  /* success ring burst */
+  .burst {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 90px; height: 90px;
+    margin: -45px 0 0 -45px;
+    border-radius: 50%;
+    border: 3px solid var(--emerald);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .burst.go { animation: burst .7s var(--ease-out-quint) forwards; }
+  @keyframes burst {
+    0% { opacity: .9; transform: scale(.4); }
+    100% { opacity: 0; transform: scale(2.1); }
+  }
+
+  /* ---------- Hold progress ---------- */
+  .progress-block {
+    margin-top: 18px;
+    z-index: var(--z-content);
+  }
+  .progress-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 8px;
+  }
+  .progress-head .lbl {
+    font-size: .85rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-2);
+  }
+  .progress-head .pct {
+    font-weight: 900; font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--amber-600);
+  }
+  .progress-track {
+    height: 16px;
+    border-radius: 999px;
+    background: #eef2f7;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(15,23,42,0.07);
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--amber-600), var(--amber));
+    transition: width .1s linear, background .25s;
+  }
+  .progress-fill.resting { background: linear-gradient(90deg, var(--sky-600), #38bdf8); }
+
+  .feedback {
+    margin-top: 14px;
+    text-align: center;
+    font-size: clamp(1.05rem, 4.6vw, 1.35rem);
+    font-weight: 800;
+    min-height: 1.8em;
+    color: var(--ink-2);
+    transition: color .2s;
+    z-index: var(--z-content);
+  }
+  .feedback.in-zone { color: var(--amber-700); }
+  .feedback.resting { color: var(--sky-600); }
+  .feedback.over { color: var(--rose-600); }
+
+  .hint {
+    text-align: center;
+    margin-top: 8px;
+    font-size: .8rem;
+    color: var(--muted);
+    z-index: var(--z-content);
+  }
+  .hint kbd {
+    font-family: inherit; font-weight: 700;
+    background: #f1f5f9; border: 1px solid var(--line-strong);
+    border-radius: 6px; padding: 1px 6px; font-size: .85em;
+  }
+
+  /* ---------- Overlays ---------- */
+  .overlay {
+    position: absolute; inset: 0;
+    z-index: var(--z-overlay);
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.42);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    animation: fade .25s ease;
+  }
+  .overlay[hidden] { display: none; }
+  @keyframes fade { from { opacity: 0; } }
+
+  .sheet {
+    width: 100%; max-width: 330px;
+    background: rgba(255,255,255,0.97);
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    box-shadow: 0 24px 50px -12px rgba(15,23,42,0.4);
+    padding: 26px 22px;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    animation: pop .3s var(--ease-out-quint);
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.92) translateY(8px); } }
+
+  .sheet h2 { margin: 0; font-size: 1.5rem; font-weight: 900; color: var(--ink); letter-spacing: -0.01em; }
+  .sheet .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; width: 100%; }
+  .sheet .steps li {
+    font-size: 1.02rem; font-weight: 700; color: var(--ink-2);
+    display: flex; align-items: center; gap: 10px; justify-content: flex-start;
+    text-align: left;
+  }
+  .sheet .steps li .num {
+    width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+    background: #f1f5f9; color: var(--ink-2);
+    display: grid; place-items: center; font-weight: 900; font-size: .9rem;
+  }
+  .sheet .cue {
+    font-weight: 900; color: var(--amber-700);
+    background: rgba(245,158,11,0.12);
+    border-radius: 12px; padding: 10px 12px; width: 100%;
+  }
+
+  .btn {
+    width: 100%;
+    min-height: 52px;
+    border-radius: 16px;
+    border: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform .12s var(--ease-out-quint), filter .2s, background .2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+  .btn-primary { background: var(--emerald); color: #fff; box-shadow: 0 8px 18px -6px rgba(16,185,129,0.6); }
+  .btn-primary:hover { filter: brightness(1.05); }
+  .btn-amber { background: var(--amber-600); color: #fff; box-shadow: 0 8px 18px -6px rgba(217,119,6,0.6); }
+  .btn-ghost {
+    background: #f1f5f9; color: var(--ink-2); min-height: 46px; font-size: .98rem; font-weight: 700;
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover { background: #e8edf3; }
+
+  /* countdown */
+  .count-overlay { flex-direction: column; gap: 18px; color: #fff; }
+  .count-overlay .lead {
+    font-weight: 800; letter-spacing: .12em; text-transform: uppercase;
+    font-size: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,.4);
+  }
+  .count-num {
+    font-size: clamp(6rem, 30vw, 9rem);
+    font-weight: 900; color: var(--amber);
+    line-height: 1; font-variant-numeric: tabular-nums;
+    text-shadow: 0 6px 20px rgba(0,0,0,.35);
+  }
+  .count-num.pop { animation: cpop .28s var(--ease-out-quint); }
+  @keyframes cpop { from { transform: scale(1.35); opacity: .3; } }
+
+  /* finished sheet stat row */
+  .stats { display: flex; gap: 10px; width: 100%; }
+  .stat {
+    flex: 1; background: #f8fafc; border: 1px solid var(--line);
+    border-radius: 14px; padding: 12px 8px;
+  }
+  .stat .n { font-size: 1.7rem; font-weight: 900; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat .t { font-size: .78rem; font-weight: 700; color: var(--muted); margin-top: 2px; }
+  .check-circle {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3);
+    display: grid; place-items: center; color: var(--emerald-600);
+  }
+  .check-circle svg { width: 34px; height: 34px; }
+
+  /* badge for prototype */
+  .proto-badge {
+    position: fixed; left: 12px; bottom: 12px;
+    font-size: .72rem; font-weight: 700; color: var(--muted);
+    background: rgba(255,255,255,.8); border: 1px solid var(--line);
+    padding: 5px 10px; border-radius: 999px; z-index: var(--z-toast);
+    backdrop-filter: blur(4px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .001ms !important;
+      transition-duration: .001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="card" id="card" aria-label="Zen Balloon training">
+    <div class="glow"></div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" id="backBtn" aria-label="ออกจากการฝึก" title="ออกจากการฝึก">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="titles">
+          <h1>กำลังฝึกซ้อม</h1>
+          <p>เป้าหมาย: <span id="targetRepsLbl">3</span> ครั้ง</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn sound-on" id="muteBtn" aria-label="ปิดเสียงพากย์" aria-pressed="false" title="เสียงพากย์">
+          <svg id="soundIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>
+        </button>
+        <button class="finish-btn" id="finishBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M4 4h12l-2 4 2 4H4"/></svg>
+          <span>จบการฝึก</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Title row -->
+    <div class="game-title">
+      <div class="game-title-row">
+        <div class="emblem">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12a10 10 0 1 0-20 0"/><path d="m2 12 3 3 4-4 3 3 4-4 3 3 3-3"/><path d="M12 12v9"/></svg>
+        </div>
+        <h2>ลูกโป่งสมาธิ</h2>
+      </div>
+      <div class="reps-pill">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7"/></svg>
+        <span>ครั้งที่</span>
+        <span class="count" id="repCount">0</span>
+        <span class="total">/ <span id="repTotal">3</span></span>
+      </div>
+    </div>
+
+    <!-- Play area -->
+    <div class="play" id="play">
+      <div class="readout" id="readout">
+        <span class="label">แรงกด</span>
+        <span class="value"><span id="forceVal">0</span><span class="unit">%</span></span>
+      </div>
+
+      <div class="tube" id="tube">
+        <div class="ticks" id="ticks"></div>
+        <div class="rest-zone" id="restZone" hidden>
+          <span class="chip">ผ่อนแรง</span>
+        </div>
+        <div class="band" id="band">
+          <span class="band-chip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            เป้าหมาย
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+          </span>
+        </div>
+        <div class="balloon-wrap" id="balloonWrap">
+          <div class="balloon" id="balloon">
+            <span class="burst" id="burst"></span>
+            <svg class="face" id="faceWind" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2M12.59 11.41A2 2 0 1 0 14 8M17.73 7.73A2.5 2.5 0 1 1 19.5 12H2"/></svg>
+            <svg class="face" id="faceSmile" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" hidden><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+          </div>
+          <div class="string"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-block">
+      <div class="progress-head">
+        <span class="lbl" id="progressLbl">จับเวลาค้าง</span>
+        <span class="pct"><span id="progressPct">0</span>%</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback" role="status" aria-live="polite">กดบีบให้ลูกโป่งลอยขึ้นไปในแถบเป้าหมาย</div>
+    <div class="hint">ลาก (นิ้ว/เมาส์) ขึ้น-ลงในหลอด เพื่อจำลองแรงกด · หรือกด <kbd>↑</kbd> <kbd>↓</kbd></div>
+
+    <!-- Ready overlay -->
+    <div class="overlay" id="readyOverlay">
+      <div class="sheet">
+        <div class="emblem" style="width:56px;height:56px;border-radius:16px;">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--amber-600)"><path d="M22 12a10 10 0 1 0-20 0"/><path d="m2 12 3 3 4-4 3 3 4-4 3 3 3-3"/></svg>
+        </div>
+        <h2>เตรียมฝึกซ้อม</h2>
+        <ul class="steps">
+          <li><span class="num">1</span> วางเครื่องมือไว้บนอก</li>
+          <li><span class="num">2</span> วางคางบนแผ่นรอง</li>
+        </ul>
+        <div class="cue">👇 ก้มกดเบา ๆ เพื่อเริ่ม (ลากขึ้นในหลอด)</div>
+        <button class="btn btn-amber" id="startBtn">เริ่มฝึกซ้อม</button>
+        <button class="btn btn-ghost" id="readyBack">ย้อนกลับ</button>
+      </div>
+    </div>
+
+    <!-- Countdown overlay -->
+    <div class="overlay count-overlay" id="countOverlay" hidden>
+      <span class="lead">ปล่อยมือ เตรียมตัว...</span>
+      <div class="count-num" id="countNum">3</div>
+    </div>
+
+    <!-- Finish-confirm overlay -->
+    <div class="overlay" id="finishOverlay" hidden>
+      <div class="sheet">
+        <h2>จบการฝึกตอนนี้?</h2>
+        <p style="margin:0;font-weight:700;color:var(--ink-2);line-height:1.5;">
+          ฝึกไปแล้ว <strong id="finishReps">0</strong> จาก <span id="finishTotal">3</span> ครั้ง
+          ระบบจะบันทึกผลเท่าที่ทำได้
+        </p>
+        <button class="btn btn-primary" id="keepBtn">ฝึกต่อ</button>
+        <button class="btn btn-ghost" id="confirmFinishBtn">จบและดูผล</button>
+      </div>
+    </div>
+
+    <!-- Session complete overlay -->
+    <div class="overlay" id="doneOverlay" hidden>
+      <div class="sheet">
+        <div class="check-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>ฝึกครบแล้ว!</h2>
+        <p style="margin:0;font-weight:700;color:var(--ink-2)">เยี่ยมมากครับ วันนี้ทำได้ตามเป้าหมาย</p>
+        <div class="stats">
+          <div class="stat"><div class="n" id="doneReps">3</div><div class="t">ครั้งสำเร็จ</div></div>
+          <div class="stat"><div class="n" id="doneTime">0:00</div><div class="t">เวลารวม</div></div>
+        </div>
+        <button class="btn btn-amber" id="replayBtn">ฝึกอีกครั้ง</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="proto-badge">Prototype · redesign /game</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---- Tunable model (mirrors the production logic) ----
+  const CAL_MAX = 100;            // patient calibrated max (work in % units)
+  const TARGET_WIDTH = 15;        // band width, % of cal max
+  const HOLD_MS = 2000;
+  const REST_MS = 2000;
+  const RELEASE_THRESHOLD = 12;   // must drop below to rest
+  const START_THRESHOLD = Math.max(3, CAL_MAX * 0.25); // scaled start trigger
+  const TARGET_REPS = 3;          // small for demo
+  const TICK = 50;
+
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---- DOM ----
+  const $ = (id) => document.getElementById(id);
+  const tube = $("tube"), play = $("play"), band = $("band"), restZone = $("restZone");
+  const balloonWrap = $("balloonWrap"), balloon = $("balloon"), burst = $("burst");
+  const faceWind = $("faceWind"), faceSmile = $("faceSmile");
+  const readout = $("readout"), forceVal = $("forceVal");
+  const progressFill = $("progressFill"), progressPct = $("progressPct"),
+        progressLbl = $("progressLbl"), progressBar = $("progressBar");
+  const feedback = $("feedback");
+  const repCountEl = $("repCount");
+  const readyOverlay = $("readyOverlay"), countOverlay = $("countOverlay"),
+        countNum = $("countNum"), finishOverlay = $("finishOverlay"),
+        doneOverlay = $("doneOverlay");
+
+  $("repTotal").textContent = TARGET_REPS;
+  $("targetRepsLbl").textContent = TARGET_REPS;
+  $("finishTotal").textContent = TARGET_REPS;
+
+  // ---- ticks ----
+  const ticks = $("ticks");
+  for (let i = 1; i < 8; i++) {
+    const t = document.createElement("i");
+    t.style.bottom = (i * 12.5) + "%";
+    ticks.appendChild(t);
+  }
+
+  // ---- State ----
+  let state = "ready";            // ready | countdown | playing | finished
+  let phase = "squeeze";          // squeeze | release
+  let force = 0;                  // current smoothed force (% of cal max)
+  let targetForce = 0;            // driven by pointer / keys
+  let pointerActive = false;
+  let targetMin = 70, targetMax = 85;
+  let inZone = false;
+  let holdMs = 0, restMs = 0, restViolationMs = 0;
+  let repCount = 0;
+  let sessionStart = 0;
+  let countTimer = null, loopTimer = null;
+
+  // visual scale anchored to target (the bug fix): band always ~78% up the tube
+  const visualMax = () => Math.max(targetMax / 0.78, 10);
+  const posOf = (f) => Math.max(0, Math.min(96, (f / visualMax()) * 100));
+  // balloon vertical center, mapped into the tube's usable range (6%..92%)
+  const tubePos = (p) => 6 + (p / 100) * 84;
+
+  function randomizeTarget() {
+    const min = 65 + Math.random() * 15;   // 65–80
+    targetMin = min;
+    targetMax = min + TARGET_WIDTH;
+  }
+
+  function layoutZones() {
+    const bMin = posOf(targetMin), bMax = posOf(targetMax);
+    band.style.bottom = tubePos(bMin) + "%";
+    band.style.height = (tubePos(bMax) - tubePos(bMin)) + "%";
+    restZone.style.height = tubePos(posOf(RELEASE_THRESHOLD)) + "%";
+  }
+
+  function renderBalloon() {
+    const p = posOf(force);
+    // center the balloon body on its force position
+    const bh = balloon.getBoundingClientRect().height || 64;
+    const tubeH = tube.getBoundingClientRect().height || 600;
+    const halfPct = (bh / 2 / tubeH) * 100;
+    balloonWrap.style.bottom = (tubePos(p) - halfPct) + "%";
+  }
+
+  function setForceReadout() {
+    forceVal.textContent = Math.round((force / CAL_MAX) * 100);
+    readout.classList.toggle("in-zone", inZone);
+    readout.classList.toggle("over", !inZone && phase === "squeeze" && force > targetMax);
+    readout.classList.toggle("resting", phase === "release");
+  }
+
+  // ---- Feedback copy ----
+  function setFeedback() {
+    feedback.classList.remove("in-zone", "resting", "over");
+    if (phase === "release") {
+      feedback.classList.add("resting");
+      if (force >= RELEASE_THRESHOLD) {
+        feedback.textContent = "ค่อย ๆ ผ่อนแรงลง";
+      } else {
+        const left = Math.max(0, Math.ceil((REST_MS - restMs) / 1000));
+        feedback.textContent = "พักไว้... อีก " + left + " วินาที";
+      }
+      return;
+    }
+    if (inZone) {
+      feedback.classList.add("in-zone");
+      feedback.textContent = holdMs > HOLD_MS * 0.5 ? "เกือบครบแล้ว ค้างไว้!" : "ค้างไว้ตรงนั้น...";
+    } else if (force > targetMax) {
+      feedback.classList.add("over");
+      feedback.textContent = "เบาลงนิดนึง";
+    } else {
+      feedback.textContent = "กดบีบให้ลูกโป่งขึ้นไปในแถบเป้าหมาย";
+    }
+  }
+
+  function setProgress(pct, resting) {
+    pct = Math.max(0, Math.min(100, pct));
+    progressFill.style.width = pct + "%";
+    progressFill.classList.toggle("resting", !!resting);
+    progressPct.textContent = Math.round(pct);
+    progressBar.setAttribute("aria-valuenow", Math.round(pct));
+    progressLbl.textContent = resting ? "สถานะการพัก" : "จับเวลาค้าง";
+  }
+
+  function setBalloonFace(showSmile, resting) {
+    faceSmile.hidden = !showSmile;
+    faceWind.hidden = showSmile;
+    balloon.classList.toggle("in-zone", showSmile && !resting);
+    balloon.classList.toggle("resting", !!resting);
+    band.classList.toggle("active", showSmile && !resting);
+  }
+
+  // ---- Flow transitions ----
+  function startCountdown() {
+    state = "countdown";
+    let n = 3;
+    countNum.textContent = n;
+    countOverlay.hidden = false;
+    countNum.classList.add("pop");
+    setTimeout(() => countNum.classList.remove("pop"), 280);
+    countTimer = setInterval(() => {
+      n--;
+      if (n <= 0) {
+        clearInterval(countTimer);
+        countOverlay.hidden = true;
+        startGame();
+      } else {
+        countNum.textContent = n;
+        countNum.classList.remove("pop");
+        void countNum.offsetWidth;
+        countNum.classList.add("pop");
+      }
+    }, 800);
+  }
+
+  function startGame() {
+    state = "playing";
+    phase = "squeeze";
+    holdMs = 0; restMs = 0;
+    sessionStart = Date.now();
+    randomizeTarget();
+    layoutZones();
+    setProgress(0, false);
+    setFeedback();
+  }
+
+  function completeRep() {
+    repCount++;
+    repCountEl.textContent = repCount;
+    repCountEl.classList.add("bump");
+    setTimeout(() => repCountEl.classList.remove("bump"), 350);
+
+    // success burst
+    if (!reduceMotion) {
+      burst.classList.remove("go"); void burst.offsetWidth; burst.classList.add("go");
+    }
+    feedback.classList.remove("resting");
+    feedback.classList.add("in-zone");
+    feedback.textContent = "เยี่ยมมาก!";
+
+    if (repCount >= TARGET_REPS) {
+      setTimeout(finishSession, 900);
+      return;
+    }
+    // next rep
+    phase = "squeeze";
+    holdMs = 0; restMs = 0;
+    randomizeTarget();
+    layoutZones();
+    setProgress(0, false);
+    setTimeout(() => { if (state === "playing") setFeedback(); }, 900);
+  }
+
+  function finishSession() {
+    state = "finished";
+    restZone.hidden = true;
+    setBalloonFace(false, false);
+    const secs = Math.round((Date.now() - sessionStart) / 1000);
+    $("doneReps").textContent = repCount;
+    $("doneTime").textContent = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
+    doneOverlay.hidden = false;
+  }
+
+  // ---- Game loop (50ms, mirrors production) ----
+  function loop() {
+    // smooth force toward target
+    const goal = pointerActive || keyHeld ? targetForce : 0;
+    force += (goal - force) * 0.28;
+    if (force < 0.4 && goal === 0) force = 0;
+
+    // ready: a deliberate press starts the countdown
+    if (state === "ready") {
+      if (force >= START_THRESHOLD) startCountdown();
+      renderBalloon(); setForceReadout();
+      return;
+    }
+    if (state !== "playing") { renderBalloon(); setForceReadout(); return; }
+
+    if (phase === "squeeze") {
+      restZone.hidden = true;
+      const nowIn = force >= targetMin && force <= targetMax;
+      if (nowIn !== inZone) {
+        inZone = nowIn;
+        setBalloonFace(inZone, false);
+      }
+      if (inZone) {
+        holdMs += TICK;
+        if (holdMs >= HOLD_MS) {
+          phase = "release";
+          inZone = false;
+          restMs = 0;
+          setBalloonFace(false, true);
+          restZone.hidden = false;
+          setProgress(0, true);
+        }
+      } else {
+        holdMs = Math.max(0, holdMs - TICK);
+      }
+      if (phase === "squeeze") setProgress((holdMs / HOLD_MS) * 100, false);
+    } else { // release
+      restZone.hidden = false;
+      if (force < RELEASE_THRESHOLD) {
+        restViolationMs = 0;
+        restMs += TICK;
+        setProgress((restMs / REST_MS) * 100, true);
+        if (restMs >= REST_MS) completeRep();
+      } else {
+        restViolationMs += TICK;
+        if (restViolationMs >= 300 && restMs > 0) {
+          restMs = 0; setProgress(0, true);
+        }
+      }
+    }
+
+    renderBalloon();
+    setForceReadout();
+    if (state === "playing") setFeedback();
+  }
+
+  // ---- Pointer → force ----
+  function forceFromClientY(clientY) {
+    const r = tube.getBoundingClientRect();
+    // top of tube = high force (slight overshoot allowed), bottom = 0
+    const ratio = 1 - (clientY - r.top) / r.height;
+    return Math.max(0, Math.min(CAL_MAX * 1.08, ratio * CAL_MAX * 1.05));
+  }
+  // Listen on the card (not just the tube): the ready / countdown overlays sit
+  // above the tube and would otherwise swallow the press. Events bubble from
+  // the overlay up to the card, so the drag-to-start still works.
+  const card = $("card");
+  function onDown(e) {
+    if (state === "finished" || state === "countdown") return;
+    if (e.target.closest("button")) return;   // let overlay buttons work
+    if (state === "ready") readyOverlay.hidden = true;
+    pointerActive = true;
+    try { card.setPointerCapture(e.pointerId); } catch (_) {}
+    targetForce = forceFromClientY(e.clientY);
+  }
+  const releasePointer = () => { pointerActive = false; targetForce = 0; };
+  card.addEventListener("pointerdown", onDown);
+  card.addEventListener("pointermove", (e) => {
+    if (pointerActive) targetForce = forceFromClientY(e.clientY);
+  });
+  card.addEventListener("pointerup", releasePointer);
+  card.addEventListener("pointercancel", releasePointer);
+
+  // ---- Keyboard control ----
+  let keyHeld = false;
+  let keyForce = 0;
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault();
+      keyHeld = true;
+      keyForce += e.key === "ArrowUp" ? 8 : -8;
+      keyForce = Math.max(0, Math.min(CAL_MAX * 1.05, keyForce));
+      targetForce = keyForce;
+    }
+  });
+  document.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      // gentle auto-decay when keys idle
+      setTimeout(() => { keyHeld = false; keyForce = 0; }, 120);
+    }
+  });
+
+  // ---- Buttons ----
+  $("muteBtn").addEventListener("click", (e) => {
+    const b = e.currentTarget;
+    const on = b.classList.toggle("sound-on");
+    b.setAttribute("aria-pressed", String(!on));
+    b.setAttribute("aria-label", on ? "ปิดเสียงพากย์" : "เปิดเสียงพากย์");
+  });
+  $("backBtn").addEventListener("click", openFinishOrLeave);
+  $("finishBtn").addEventListener("click", openFinishOrLeave);
+  $("readyBack").addEventListener("click", () => alert("ตัวอย่าง: กลับไปหน้า Dashboard"));
+  // Explicit, always-reliable start (the drag-to-start is a bonus, not the only path)
+  $("startBtn").addEventListener("click", () => {
+    if (state !== "ready") return;
+    readyOverlay.hidden = true;
+    startCountdown();
+  });
+
+  function openFinishOrLeave() {
+    if (state === "playing" && repCount < TARGET_REPS) {
+      $("finishReps").textContent = repCount;
+      finishOverlay.hidden = false;
+    } else {
+      finishSession();
+    }
+  }
+  $("keepBtn").addEventListener("click", () => { finishOverlay.hidden = true; });
+  $("confirmFinishBtn").addEventListener("click", () => { finishOverlay.hidden = true; finishSession(); });
+  $("replayBtn").addEventListener("click", () => {
+    repCount = 0; repCountEl.textContent = 0; force = 0; targetForce = 0;
+    holdMs = 0; restMs = 0; inZone = false; phase = "squeeze";
+    doneOverlay.hidden = true; finishOverlay.hidden = true;
+    setBalloonFace(false, false); restZone.hidden = true;
+    setProgress(0, false); setFeedback();
+    state = "ready"; readyOverlay.hidden = false;
+  });
+
+  // ---- Init ----
+  randomizeTarget();
+  layoutZones();
+  renderBalloon();
+  setForceReadout();
+  // ready overlay is shown by default; the drag-to-start is handled in onDown
+  readyOverlay.hidden = false;
+
+  loopTimer = setInterval(loop, TICK);
+  window.addEventListener("resize", () => { layoutZones(); renderBalloon(); });
+})();
+</script>
+</body>
+</html>

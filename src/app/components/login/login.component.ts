@@ -11,14 +11,10 @@ import { I18nService } from '../../services/i18n.service';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="min-h-screen flex items-center justify-center p-4 relative z-10 text-slate-800 dark:text-slate-200 transition-colors duration-300">
-      <div class="bg-white/80 dark:bg-brand-card backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl shadow-2xl p-8 w-full max-w-md relative overflow-hidden transition-colors duration-300">
-        <!-- Glow -->
-        <div class="absolute -top-20 -right-20 w-40 h-40 bg-brand-accent rounded-full blur-[80px] opacity-20"></div>
-        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-indigo-500 rounded-full blur-[80px] opacity-20"></div>
-
+      <div class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl shadow-md p-8 w-full max-w-md relative overflow-hidden transition-colors duration-300">
         <!-- Language toggle -->
         <div class="flex justify-end mb-2 relative z-10">
-          <button (click)="i18n.toggleLang()" class="text-xs px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-brand-accent transition-colors border border-slate-200 dark:border-white/10">
+          <button (click)="i18n.toggleLang()" class="text-sm font-semibold px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors border border-slate-200 dark:border-slate-700">
             {{ i18n.currentLang() === 'th' ? 'EN' : 'TH' }}
           </button>
         </div>
@@ -28,7 +24,7 @@ import { I18nService } from '../../services/i18n.service';
             <i class="fa-solid fa-staff-snake text-3xl text-brand-accent"></i>
           </div>
           <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-2 transition-colors duration-300">{{ i18n.t('login.welcome') }}</h1>
-          <p class="text-slate-500 dark:text-slate-400 text-base">{{ i18n.t('login.subtitle') }}</p>
+          <p class="text-slate-600 dark:text-slate-300 text-base">{{ i18n.t('login.subtitle') }}</p>
         </div>
 
         <form (ngSubmit)="onSubmit()" class="space-y-5 relative z-10">
@@ -43,7 +39,7 @@ import { I18nService } from '../../services/i18n.service';
                 [(ngModel)]="email" 
                 name="email"
                 required
-                class="w-full pl-10 pr-4 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm dark:shadow-none"
+                class="w-full pl-10 pr-4 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="name@example.com">
             </div>
           </div>
@@ -59,7 +55,7 @@ import { I18nService } from '../../services/i18n.service';
                 [(ngModel)]="password" 
                 name="password"
                 required
-                class="w-full pl-10 pr-4 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm dark:shadow-none"
+                class="w-full pl-10 pr-4 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="••••••••">
             </div>
           </div>
@@ -71,13 +67,13 @@ import { I18nService } from '../../services/i18n.service';
           <button 
             type="submit" 
             [disabled]="loading"
-            class="w-full min-h-[56px] bg-brand-accent hover:bg-brand-accent/90 text-white font-medium text-lg rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_25px_rgba(59,130,246,0.5)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+            class="w-full min-h-[56px] bg-brand-accent hover:bg-blue-700 text-white font-semibold text-lg rounded-xl transition-colors duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
             <i *ngIf="loading" class="fa-solid fa-spinner fa-spin mr-2"></i>
             {{ loading ? i18n.t('login.loading') : i18n.t('login.submit') }}
           </button>
         </form>
 
-        <div class="mt-6 text-center text-base text-slate-500 dark:text-slate-400 relative z-10 transition-colors duration-300">
+        <div class="mt-6 text-center text-base text-slate-600 dark:text-slate-300 relative z-10 transition-colors duration-300">
           {{ i18n.t('login.noAccount') }} 
           <a routerLink="/register" class="text-brand-accent hover:text-blue-700 dark:hover:text-white font-medium transition-colors">{{ i18n.t('login.createOne') }}</a>
         </div>

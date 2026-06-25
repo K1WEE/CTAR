@@ -22,35 +22,35 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
     ]),
   ],
   template: `
-    <div [@.disabled]="prefersReducedMotion" class="game-card bg-white/70 dark:bg-brand-card backdrop-blur-xl rounded-3xl shadow-xl p-4 sm:p-6 w-full flex flex-col items-center border border-slate-200 dark:border-white/10 min-h-[450px] h-full relative overflow-hidden transition-colors duration-300">
+    <div [@.disabled]="prefersReducedMotion" class="game-card bg-white dark:bg-brand-card rounded-3xl shadow-md p-4 sm:p-6 w-full flex flex-col items-center border border-slate-200 dark:border-slate-700 min-h-[450px] h-full relative overflow-hidden transition-colors duration-300">
       
       <!-- Ready State Overlay (Transparent backdrop, showing game behind it) -->
-      <div *ngIf="gameFlowState() === 'ready'" class="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
+      <div *ngIf="gameFlowState() === 'ready' && showReadyInstructions()" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
         <!-- Center translucent instruction card -->
-        <div class="bg-white/95 dark:bg-slate-900/95 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
           <app-chin-tuck-demo size="sm" [showLabel]="false" class="mb-2"></app-chin-tuck-demo>
-          
+
           <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
-            {{ i18n.currentLang() === 'th' ? 'เตรียมฝึกซ้อม' : 'Get Ready' }}
+            {{ i18n.currentLang() === 'th' ? 'เตรียมตัวเริ่มเกม' : 'Get Ready' }}
           </h2>
-          
+
           <div class="text-slate-700 dark:text-slate-300 text-sm sm:text-base font-bold leading-relaxed space-y-2">
             <p>1. {{ i18n.currentLang() === 'th' ? 'วางเครื่องมือไว้บนอก' : 'Place device on chest' }}</p>
             <p>2. {{ i18n.currentLang() === 'th' ? 'วางคางบนแผ่นรอง' : 'Rest chin on pad' }}</p>
-            <p class="text-amber-600 dark:text-amber-400 font-extrabold animate-pulse">
-              👉 {{ i18n.currentLang() === 'th' ? 'ก้มกดเบาๆ เพื่อเริ่มเกม' : 'Press gently to start' }}
+            <p class="text-amber-600 dark:text-amber-400 font-extrabold">
+              {{ i18n.currentLang() === 'th' ? 'ก้มกดเบาๆ เพื่อเริ่มเกม' : 'Press gently to start' }}
             </p>
           </div>
-          
-          <!-- Back button in modal to let them exit -->
-          <button (click)="goBack()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-800 dark:hover:text-white text-xs font-bold rounded-lg transition-colors w-full mt-1">
-            {{ i18n.currentLang() === 'th' ? 'ย้อนกลับ' : 'Go Back' }}
+
+          <!-- Dismiss the instructions and start the countdown (does not leave the page) -->
+          <button (click)="dismissReady()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white text-sm font-bold rounded-lg transition-colors w-full mt-1">
+            {{ i18n.currentLang() === 'th' ? 'รับทราบ' : 'Got it' }}
           </button>
         </div>
       </div>
 
       <!-- Countdown State Overlay -->
-      <div *ngIf="gameFlowState() === 'countdown'" class="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in text-center">
+      <div *ngIf="gameFlowState() === 'countdown'" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in text-center">
         <span class="text-white font-bold uppercase tracking-widest text-sm xs:text-base sm:text-lg mb-4 drop-shadow-md">
           {{ i18n.currentLang() === 'th' ? 'ปล่อยมือ เตรียมตัว...' : 'Release and get ready...' }}
         </span>
@@ -61,8 +61,8 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
       </div>
 
       <!-- Disconnected State Overlay -->
-      <div *ngIf="gameFlowState() === 'disconnected'" class="absolute inset-0 bg-slate-950/60 backdrop-blur-[3px] z-40 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
-        <div role="alert" class="bg-white/95 dark:bg-slate-900/95 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
+      <div *ngIf="gameFlowState() === 'disconnected'" class="absolute inset-0 bg-slate-950/65 z-40 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <div role="alert" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
           <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
             <i class="fa-brands fa-bluetooth-b text-2xl text-red-500" aria-hidden="true"></i>
           </div>
@@ -80,15 +80,19 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
       </div>
 
       <!-- Exit Confirmation Overlay -->
-      <div *ngIf="showExitConfirm()" class="absolute inset-0 bg-slate-950/60 backdrop-blur-[3px] z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
-        <div role="alertdialog" aria-modal="true" class="bg-white/95 dark:bg-slate-900/95 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
+      <div *ngIf="showExitConfirm()" class="absolute inset-0 bg-slate-950/65 z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
           <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
             {{ i18n.currentLang() === 'th' ? 'ออกจากการฝึก?' : 'Leave training?' }}
           </h2>
           <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
             {{ i18n.currentLang() === 'th'
-              ? 'ฝึกไปแล้ว ' + currentRepVal + ' ครั้ง ถ้าออกตอนนี้ความคืบหน้าจะไม่ถูกบันทึก'
-              : 'You completed ' + currentRepVal + ' reps. Leaving now will not save your progress.' }}
+              ? (currentRepVal > 0
+                  ? 'ฝึกไปแล้ว ' + currentRepVal + ' ครั้ง ถ้าออกตอนนี้ความคืบหน้าจะไม่ถูกบันทึก'
+                  : 'ต้องการออกจากการฝึกใช่หรือไม่?')
+              : (currentRepVal > 0
+                  ? 'You completed ' + currentRepVal + ' reps. Leaving now will not save your progress.'
+                  : 'Are you sure you want to leave training?') }}
           </p>
           <button (click)="cancelExit()"
             class="px-6 min-h-[52px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
@@ -101,8 +105,27 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
         </div>
       </div>
 
-      <!-- Glow effect -->
-      <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px] opacity-10 pointer-events-none"></div>
+      <!-- Finish-Early Confirmation Overlay -->
+      <div *ngIf="showFinishConfirm()" class="absolute inset-0 bg-slate-950/65 z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+            {{ i18n.currentLang() === 'th' ? 'จบการฝึกตอนนี้?' : 'Finish now?' }}
+          </h2>
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+            {{ i18n.currentLang() === 'th'
+              ? 'ฝึกไปแล้ว ' + currentRepVal + ' จาก ' + targetReps + ' ครั้ง ระบบจะบันทึกผลเท่าที่ทำได้'
+              : 'You completed ' + currentRepVal + ' of ' + targetReps + ' reps. We will save your progress so far.' }}
+          </p>
+          <button (click)="cancelFinish()"
+            class="px-6 min-h-[52px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            {{ i18n.currentLang() === 'th' ? 'ฝึกต่อ' : 'Keep training' }}
+          </button>
+          <button (click)="confirmFinish()"
+            class="px-6 min-h-[44px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-sm cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            {{ i18n.currentLang() === 'th' ? 'จบและดูผล' : 'Finish and view results' }}
+          </button>
+        </div>
+      </div>
 
       <!-- Integrated Top Header Bar -->
       <div class="game-header w-full flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/10 relative z-10">
@@ -113,9 +136,11 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
             <i class="fa-solid fa-arrow-left text-lg" aria-hidden="true"></i>
           </button>
           <div class="text-left min-w-0">
-            <h3 class="font-black text-base xs:text-lg sm:text-xl text-slate-800 dark:text-white leading-tight whitespace-nowrap">{{ i18n.t('game.activeSession') }}</h3>
+            <!-- No nowrap: the title wraps to a second line on narrow widths
+                 instead of overflowing under the mute / finish buttons -->
+            <h3 class="font-black text-base xs:text-lg sm:text-xl text-slate-800 dark:text-white leading-tight text-balance">{{ i18n.t('game.activeSession') }}</h3>
             <!-- Rep count lives only in the centered pill below to avoid two competing counters -->
-            <p class="text-xs xs:text-sm sm:text-base text-slate-500 dark:text-slate-400 leading-tight font-semibold whitespace-nowrap">
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-tight font-semibold">
               {{ i18n.t('game.targetReps') }} {{ targetReps }}
             </p>
           </div>
@@ -124,7 +149,7 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
           <button 
             (click)="toggleMute()" 
             class="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 border bg-white dark:bg-slate-800"
-            [ngClass]="isMuted ? 'border-slate-200 text-slate-400 dark:border-white/10 dark:text-slate-500' : 'border-amber-200 text-amber-600 dark:border-amber-500/30 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-500/5'"
+            [ngClass]="isMuted ? 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400' : 'border-amber-300 text-amber-700 dark:border-amber-500/30 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-500/5'"
             [title]="isMuted ? (i18n.currentLang() === 'th' ? 'เปิดเสียงพากย์' : 'Unmute Voice') : (i18n.currentLang() === 'th' ? 'ปิดเสียงพากย์' : 'Mute Voice')"
             [attr.aria-label]="isMuted ? (i18n.currentLang() === 'th' ? 'เปิดเสียงพากย์' : 'Unmute Voice') : (i18n.currentLang() === 'th' ? 'ปิดเสียงพากย์' : 'Mute Voice')"
             [attr.aria-pressed]="isMuted">
@@ -153,44 +178,57 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
             <i class="fa-solid fa-dumbbell text-amber-600 dark:text-amber-500"></i>
             <span>{{ i18n.t('game.hud.reps') }}:</span>
             <span class="text-lg sm:text-xl font-black tabular-nums">{{ currentRepVal }}</span>
-            <span class="text-xs sm:text-sm text-slate-400 dark:text-slate-500">/ {{ targetReps }}</span>
+            <span class="text-sm sm:text-base text-amber-700 dark:text-amber-500">/ {{ targetReps }}</span>
          </div>
       </div>
 
       <!-- Main Game Area (Centered Single Column) -->
       <div class="w-full flex-1 relative flex justify-center items-center z-20 min-h-0">
 
+        <!-- Live force readout: a large, glanceable % of the patient's calibrated
+             max. Turns amber in-zone to reinforce the balloon's own colour cue.
+             Anchored to the side so it never shifts the centred tube. -->
+        <div *ngIf="gameFlowState() === 'playing'"
+             class="force-readout absolute right-1 xs:right-3 top-1/2 -translate-y-1/2 flex flex-col items-center text-center select-none pointer-events-none transition-colors duration-200"
+             aria-hidden="true">
+          <span class="text-xs xs:text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.currentLang() === 'th' ? 'แรงกด' : 'Force' }}</span>
+          <span class="text-4xl xs:text-5xl font-black tabular-nums leading-none"
+                [ngClass]="inTargetZone ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'">
+            {{ forcePercent() }}<span class="text-lg xs:text-2xl align-top">%</span>
+          </span>
+        </div>
+
         <!-- The Balloon Track (Centered & Dynamically Sized to fill parent container height) -->
-        <div class="relative w-24 xs:w-28 h-[85%] xs:h-[90%] bg-slate-100 dark:bg-slate-800/50 backdrop-blur-md rounded-full border border-slate-200 dark:border-white/10 overflow-hidden shadow-inner flex flex-col justify-end z-10 transition-colors duration-300">
+        <div class="relative w-24 xs:w-28 h-[85%] xs:h-[90%] bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner flex flex-col justify-end z-10 transition-colors duration-300">
           
           <!-- Target Zone Overlay (Elderly-Friendly High-Contrast Amber/Orange with indicators) -->
           <div *ngIf="!isReleasing"
-               class="absolute w-full bg-amber-500/30 dark:bg-amber-500/40 border-y-4 border-amber-600 dark:border-amber-400 transition-all shadow-[0_0_20px_rgba(245,158,11,0.3)] dark:shadow-[0_0_25px_rgba(245,158,11,0.5)] flex items-center justify-between px-1.5 xs:px-2"
+               class="absolute w-full bg-amber-500/30 dark:bg-amber-500/40 border-y-4 border-amber-600 dark:border-amber-400 transition-all flex items-center justify-between px-1.5 xs:px-2"
                [style.bottom.%]="targetZoneVisualBottom"
                [style.height.%]="targetZoneVisualHeight">
-             <i class="fa-solid fa-chevron-right text-amber-700 dark:text-amber-300 text-[10px] xs:text-xs"></i>
-             <span class="text-[11px] xs:text-xs font-black text-amber-950 dark:text-amber-100 uppercase tracking-tighter whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.target') }}</span>
-             <i class="fa-solid fa-chevron-left text-amber-700 dark:text-amber-300 text-[10px] xs:text-xs"></i>
+             <i class="fa-solid fa-chevron-right text-amber-700 dark:text-amber-300 text-xs"></i>
+             <span class="text-xs xs:text-sm font-black text-amber-950 dark:text-amber-100 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.target') }}</span>
+             <i class="fa-solid fa-chevron-left text-amber-700 dark:text-amber-300 text-xs"></i>
           </div>
 
           <!-- Release Green Zone Overlay (Visible only when releasing for relaxation below 4.0N) -->
           <div *ngIf="isReleasing"
-               class="absolute w-full bg-emerald-500/20 dark:bg-emerald-500/35 border-t-4 border-emerald-500/80 transition-all shadow-[0_0_15px_rgba(16,185,129,0.15)] flex flex-col items-center justify-center px-1"
+               class="absolute w-full bg-emerald-500/20 dark:bg-emerald-500/35 border-t-4 border-emerald-500/80 transition-all flex flex-col items-center justify-center px-1"
                style="bottom: 0;"
                [style.height.%]="restZoneVisualPercent">
              <i class="fa-solid fa-chevron-down text-emerald-600 dark:text-emerald-400 text-xs mb-0.5"></i>
-             <span class="text-[11px] xs:text-xs font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-tighter whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.rest') }}</span>
+             <span class="text-xs xs:text-sm font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.rest') }}</span>
           </div>
 
           <!-- The Floating Balloon (Raised offset slightly to prevent bottom clipping) -->
           <div class="absolute w-full flex justify-center transition-all duration-75 ease-linear"
                [style.bottom.%]="balloonPosition * 0.85 + 6">
-            <div class="w-14 h-18 xs:w-16 xs:h-20 bg-gradient-to-tr from-rose-600 to-pink-500 rounded-[50%] shadow-[0_0_20px_rgba(244,63,94,0.5)] relative flex items-center justify-center
-                        before:content-[''] before:absolute before:-bottom-2 before:w-0 before:h-0 
-                        before:border-l-[5px] before:border-l-transparent before:border-r-[5px] before:border-r-transparent 
+            <div class="w-14 h-18 xs:w-16 xs:h-20 bg-gradient-to-tr from-rose-600 to-pink-500 rounded-[50%] shadow-md relative flex items-center justify-center
+                        before:content-[''] before:absolute before:-bottom-2 before:w-0 before:h-0
+                        before:border-l-[5px] before:border-l-transparent before:border-r-[5px] before:border-r-transparent
                         before:border-b-[7px] before:border-b-rose-700
                         transition-transform duration-300"
-                  [ngClass]="{'scale-110 shadow-[0_0_30px_rgba(245,158,11,0.7)] border-2 border-amber-400': inTargetZone}">
+                  [ngClass]="{'scale-110 shadow-lg border-2 border-amber-400': inTargetZone}">
                <i class="fa-solid fa-face-smile text-white text-xl xs:text-2xl drop-shadow-md animate-pulse" *ngIf="inTargetZone"></i>
                <i class="fa-solid fa-wind text-white text-xl xs:text-2xl opacity-80" *ngIf="!inTargetZone"></i>
             </div>
@@ -208,17 +246,16 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
           <span class="text-brand-accent">{{ holdProgress | number:'1.0-0' }}%</span>
         </div>
         <div class="h-3 xs:h-4 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200 dark:border-white/5 transition-colors duration-300" role="progressbar" [attr.aria-valuenow]="holdProgress" aria-valuemin="0" aria-valuemax="100">
-          <div class="h-full bg-gradient-to-r transition-all duration-100 relative"
-               [ngClass]="isReleasing ? 'from-sky-400 to-blue-500' : 'from-amber-400 to-amber-300 dark:from-amber-500 dark:to-amber-300'"
+          <div class="h-full transition-all duration-100 relative"
+               [ngClass]="isReleasing ? 'bg-sky-500' : 'bg-amber-500'"
                [style.width.%]="holdProgress">
-                 <div class="absolute top-0 right-0 bottom-0 left-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSI+PC9yZWN0Pgo8cGF0aCBkPSJNMCA4TDggMFpNMCAwTDggOFoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+Cjwvc3ZnPg==')] opacity-30 animate-[slide_1s_linear_infinite]"></div>
           </div>
         </div>
       </div>
       
       <!-- Feedback Text -->
       <div class="mt-4 text-center font-bold text-xl xs:text-2xl h-8 xs:h-10 transition-colors duration-300 relative z-10 feedback-container"
-           [ngClass]="isReleasing ? 'text-sky-600 dark:text-sky-400' : (inTargetZone ? 'text-amber-700 dark:text-amber-300 drop-shadow-[0_0_4px_rgba(245,158,11,0.3)] dark:drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : 'text-slate-700 dark:text-slate-300')"
+           [ngClass]="isReleasing ? 'text-sky-600 dark:text-sky-400' : (inTargetZone ? 'text-amber-700 dark:text-amber-300' : 'text-slate-700 dark:text-slate-300')"
            role="status" aria-live="polite">
         {{ feedbackMessage }}
       </div>
@@ -285,10 +322,18 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   public i18n = inject(I18nService);
   public bleService = inject(BleService);
   public gameFlowState = signal<'ready' | 'countdown' | 'playing' | 'disconnected'>('ready');
+  // Controls the "Get Ready" instruction overlay. Dismissed via "รับทราบ" so the
+  // user can see the game; the physical press still starts the countdown either way.
+  public showReadyInstructions = signal<boolean>(true);
   public countdownValue = signal<number>(3);
   public showExitConfirm = signal<boolean>(false);
+  public showFinishConfirm = signal<boolean>(false);
   private countdownTimer: any;
   private voiceTimeout: any;
+  private readyDismissTimer: any;
+  // Timestamp when force first crossed 2N while the ready overlay is up; the press
+  // must be sustained 0.2s to dismiss the overlay, filtering out sensor spikes.
+  private readyHoldStart: number | null = null;
   private router = inject(Router);
 
   public isMuted = false;
@@ -345,9 +390,25 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   public feedbackMessage = '';
   private gameloop: any;
 
-  // Visual maximum scale of the tube based on calibration
+  // Visual maximum scale of the tube, anchored to the *active* target zone.
+  //
+  // Anchoring to targetMax (not the raw calibrated max with a fixed 50N floor)
+  // keeps the target band sitting ~⅔ up the tube for every patient. A weakly
+  // calibrated user used to get a band compressed onto the floor, where the
+  // resting balloon's 22%-tall body already overlapped it — so they scored a
+  // hold without squeezing at all. Tying the scale to targetMax guarantees the
+  // balloon must always travel a real distance to reach the zone, while the
+  // /0.78 factor leaves headroom above the band for over-press ("too hard").
   private get maxScale() {
-    return Math.max(50, this.maxForceLimit * 1.3); // give 30% headroom above max force
+    return Math.max(this.targetMax / 0.78, 10);
+  }
+
+  // Force needed to deliberately kick off the countdown from the ready screen.
+  // Scaled to the patient's own calibration so a frail user (low max) isn't
+  // made to spend most of their strength just to *start*; floored at 3N so
+  // sensor noise / resting weight can't auto-start the session.
+  private get startThreshold(): number {
+    return Math.max(3, this.maxForceLimit * 0.25);
   }
 
   // Percentage display for elderly users (instead of Newton)
@@ -362,7 +423,7 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   }
 
   getTriggerProgressPercent(): number {
-    return Math.min(100, Math.round((this.currentForce() / 5.0) * 100));
+    return Math.min(100, Math.round((this.currentForce() / this.startThreshold) * 100));
   }
 
   // The balloon is drawn at (pos * 0.85 + 6)% from the bottom, so every zone
@@ -404,10 +465,19 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
       // Guard: Do not trigger feedback or target zone evaluation if not actively playing
       if (this.gameFlowState() !== 'playing') {
         this.inTargetZone = false;
-        if (this.gameFlowState() === 'ready' && force >= 5.0) {
-          this.ngZone.run(() => {
-            this.startCountdown();
-          });
+        // While the ready overlay is up, a 2N press held 0.2s dismisses it and
+        // starts the countdown (same outcome as the button or the 5s auto-close).
+        if (this.gameFlowState() === 'ready') {
+          if (force >= 2.0) {
+            if (this.readyHoldStart === null) {
+              this.readyHoldStart = Date.now();
+            } else if (Date.now() - this.readyHoldStart >= 200) {
+              this.readyHoldStart = null;
+              this.ngZone.run(() => this.dismissReady());
+            }
+          } else {
+            this.readyHoldStart = null;
+          }
         }
         return;
       }
@@ -484,6 +554,23 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
     this.setVoiceTimeout(() => {
       this.playVoice('intro.mp3');
     }, 600);
+
+    // The "Get Ready" modal is shown once after each calibration: the calibrate
+    // screen sets this flag, and we consume it here so a plain refresh (with no
+    // new calibration) skips the modal. Re-calibrating shows it again.
+    const showIntro = localStorage.getItem('ctar_show_game_intro') === '1';
+    if (showIntro) {
+      localStorage.removeItem('ctar_show_game_intro');
+    } else {
+      this.showReadyInstructions.set(false);
+    }
+
+    // Auto-start the countdown so the game never stalls: a longer beat when the
+    // modal is shown (time to read it), and a near-immediate 0.5s start on a
+    // plain refresh. The device press (2N/0.2s) starts the same countdown sooner.
+    this.readyDismissTimer = setTimeout(() => {
+      this.ngZone.run(() => this.dismissReady());
+    }, showIntro ? 5000 : 500);
   }
 
   toggleMute() {
@@ -707,12 +794,8 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   }
 
   goBack() {
-    // Mid-session exits discard completed reps — make sure it's intentional
-    if (this.gameFlowState() === 'playing' && this.currentRepVal > 0) {
-      this.showExitConfirm.set(true);
-      return;
-    }
-    this.router.navigate(['/dashboard']);
+    // Leaving abandons the current training session, so always confirm first.
+    this.showExitConfirm.set(true);
   }
 
   confirmExit() {
@@ -724,7 +807,35 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   }
 
   finishSession() {
+    // Mid-session early-finish discards nothing (it saves to /summary), but a
+    // stray tap before reaching the target still surprises the patient — so
+    // confirm whenever they finish short.
+    if (this.gameFlowState() === 'playing' && this.currentRepVal < this.targetReps) {
+      this.showFinishConfirm.set(true);
+      return;
+    }
     this.router.navigate(['/summary']);
+  }
+
+  confirmFinish() {
+    this.showFinishConfirm.set(false);
+    this.router.navigate(['/summary']);
+  }
+
+  cancelFinish() {
+    this.showFinishConfirm.set(false);
+  }
+
+  /**
+   * Close the "Get Ready" instructions and immediately begin the countdown.
+   * All three dismiss routes funnel through here (device press 2N/0.2s, the
+   * "รับทราบ" button, and the 5s auto-close), so the game always starts the
+   * same way. The guard makes repeat calls a no-op once the countdown is live.
+   */
+  dismissReady() {
+    if (this.gameFlowState() !== 'ready') return;
+    this.showReadyInstructions.set(false);
+    this.startCountdown();
   }
 
   startCountdown() {
@@ -778,6 +889,9 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
     }
     if (this.voiceTimeout) {
       clearTimeout(this.voiceTimeout);
+    }
+    if (this.readyDismissTimer) {
+      clearTimeout(this.readyDismissTimer);
     }
     this.biofeedback.stopVibrationLoop();
     if (this.activeAudio) {
