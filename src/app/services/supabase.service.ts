@@ -9,6 +9,7 @@ export class SupabaseService {
   public client: SupabaseClient;
   public currentUser = signal<User | null>(null);
   public userRole = signal<string>('user');
+  public isInitialized = signal<boolean>(false);
 
   /**
    * Resolves once the initial session has been restored from storage.
@@ -28,6 +29,7 @@ export class SupabaseService {
       if (user) {
         this.fetchAndSetRole(user.id);
       }
+      this.isInitialized.set(true);
     });
 
     // Listen to auth changes
@@ -59,6 +61,14 @@ export class SupabaseService {
         data: metadata
       }
     });
+  }
+
+  async sendPasswordResetEmail(email: string, redirectTo: string) {
+    return this.client.auth.resetPasswordForEmail(email, { redirectTo });
+  }
+
+  async updatePassword(password: string) {
+    return this.client.auth.updateUser({ password });
   }
 
   async getUserRole(userId: string): Promise<string> {

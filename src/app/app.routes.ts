@@ -2,10 +2,12 @@ import { Routes, CanActivateFn, Router } from '@angular/router';
 import { inject } from '@angular/core';
 import { LoginComponent } from './components/login/login.component';
 import { RegisterComponent } from './components/register/register.component';
+import { ForgotPasswordComponent } from './components/forgot-password/forgot-password.component';
+import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { CalibrateComponent } from './components/calibrate/calibrate.component';
-import { GameComponent } from './components/game/game.component';
 import { SummaryComponent } from './components/summary/summary.component';
+import { GameComponent } from './components/game/game.component';
 import { SupabaseService } from './services/supabase.service';
 
 const authGuard: CanActivateFn = async () => {
@@ -39,6 +41,8 @@ const doctorGuard: CanActivateFn = async () => {
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
+  { path: 'forgot-password', component: ForgotPasswordComponent },
+  { path: 'reset-password', component: ResetPasswordComponent },
 
   // Role-based redirect
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
