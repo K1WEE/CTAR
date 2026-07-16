@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS public.patients (
     last_name TEXT NOT NULL,
     role VARCHAR DEFAULT 'user' NOT NULL,
     dob DATE,
+    stars INTEGER DEFAULT 0,
+    target_reps INTEGER DEFAULT 15,
+    hold_duration_ms INTEGER DEFAULT 2000,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -55,3 +58,82 @@ CREATE POLICY "Allow authenticated select to clinical data"
     TO authenticated 
     USING (bucket_id = 'raw_clinical_data');
 
+
+CREATE TABLE IF NOT EXISTS public.weekly_tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    week_start DATE NOT NULL,
+    title TEXT NOT NULL,
+    description TEXT,
+    icon TEXT DEFAULT 'fa-star',
+    target INTEGER DEFAULT 1,
+    reward INTEGER DEFAULT 1,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
+);
+
+CREATE INDEX idx_weekly_tasks_week_start
+    ON public.weekly_tasks(week_start);
+
+
+CREATE TABLE IF NOT EXISTS public.patient_tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE,
+    task_id    UUID REFERENCES public.weekly_tasks(id) ON DELETE CASCADE,
+
+    progress   INTEGER DEFAULT 0,
+    completed  BOOLEAN DEFAULT false,
+
+    -- เพิ่ม week_start เพื่อ filter สัปดาห์ได้ตรงๆ ไม่ต้อง join
+    week_start DATE NOT NULL DEFAULT date_trunc('week', now())::DATE,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
+
+    CONSTRAINT unique_patient_task UNIQUE (patient_id, task_id)
+);
+
+CREATE INDEX idx_patient_tasks_week_start
+    ON public.patient_tasks(patient_id, week_start);
+
+
+-- RLS
+ALTER TABLE public.weekly_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patient_tasks ENABLE ROW LEVEL SECURITY;
+
+-- weekly_tasks are shared catalogue content: every signed-in user may read
+-- them, but only staff may create / change / remove them.
+CREATE POLICY "weekly_tasks_select_all"
+    ON public.weekly_tasks FOR SELECT TO authenticated USING (true);
+
+CREATE POLICY "weekly_tasks_write_staff"
+    ON public.weekly_tasks FOR ALL TO authenticated
+    USING (public.is_staff())
+    WITH CHECK (public.is_staff());
+
+-- patient_tasks are per-patient progress: a patient sees / updates only their
+-- own rows; staff see everyone's.
+CREATE POLICY "patient_tasks_select_own_or_staff"
+    ON public.patient_tasks FOR SELECT TO authenticated
+    USING (patient_id = auth.uid() OR public.is_staff());
+
+CREATE POLICY "patient_tasks_insert_own_or_staff"
+    ON public.patient_tasks FOR INSERT TO authenticated
+    WITH CHECK (patient_id = auth.uid() OR public.is_staff());
+
+CREATE POLICY "patient_tasks_update_own_or_staff"
+    ON public.patient_tasks FOR UPDATE TO authenticated
+    USING (patient_id = auth.uid() OR public.is_staff())
+    WITH CHECK (patient_id = auth.uid() OR public.is_staff());
+
+CREATE POLICY "patient_tasks_delete_own_or_staff"
+    ON public.patient_tasks FOR DELETE TO authenticated
+    USING (patient_id = auth.uid() OR public.is_staff());
+
+
+-- RPC atomic stars update
+CREATE OR REPLACE FUNCTION add_stars(patient_id UUID, amount INTEGER)
+RETURNS void AS $$
+    UPDATE patients SET stars = stars + amount WHERE id = patient_id;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS stars INTEGER DEFAULT 0;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS target_reps INTEGER DEFAULT 15;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hold_duration_ms INTEGER DEFAULT 2000;

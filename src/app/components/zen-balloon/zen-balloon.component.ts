@@ -52,7 +52,7 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
                         before:border-l-[6px] before:border-l-transparent before:border-r-[6px] before:border-r-transparent 
                         before:border-b-[8px] before:border-b-rose-700
                         transition-transform duration-300"
-                 [ngClass]="{'scale-110 shadow-[0_0_30px_rgba(16,185,129,0.6)]': inTargetZone}">
+                  [ngClass]="{'scale-110 shadow-[0_0_30px_rgba(16,185,129,0.6)]': inTargetZone}">
                <i class="fa-solid fa-face-smile text-white text-lg sm:text-2xl opacity-100 drop-shadow-md" *ngIf="inTargetZone"></i>
                <i class="fa-solid fa-wind text-white text-lg sm:text-2xl opacity-80" *ngIf="!inTargetZone"></i>
             </div>
@@ -130,7 +130,7 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   public inTargetZone = false;
 
   public holdProgress = 0; // 0 to 100 scale for progress bar
-  private requiredHoldTimeMs = 1500; // Starts at 1.5s
+  @Input() requiredHoldTimeMs = 2000; // Configurable hold time, defaults to 2.0s
   private currentHoldMs = 0;
 
   public feedbackMessage = "Breathe and tuck to lift...";
@@ -226,9 +226,7 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   }
 
   private updateDifficulty() {
-    // 1. Increase hold time progressively (add 0.5s per rep, max 5s)
-    const maxHoldTimeMs = 5000;
-    this.requiredHoldTimeMs = Math.min(1500 + (this.currentRepVal * 500), maxHoldTimeMs);
+    // Hold time is kept at the configured settings value (no longer hardcoded)
 
     // 2. Alternating Wave Pattern (High Intensity on odd reps, Low Intensity on even reps)
     const repNum = this.currentRepVal + 1; // 1-indexed rep number

@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed, ViewChild, ElementRef, AfterViewInit, Injector, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DataSyncService, RawDataPoint } from '../../../services/data-sync.service';
 import { I18nService } from '../../../services/i18n.service';
@@ -9,7 +10,7 @@ import { Chart } from 'chart.js/auto';
 @Component({
   selector: 'app-patient-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="min-h-screen pb-10 relative z-10 text-slate-800 dark:text-slate-200 transition-colors duration-300">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -40,9 +41,10 @@ import { Chart } from 'chart.js/auto';
           <!-- Profile & Compliance Grid -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <!-- Profile Card -->
-            <div class="md:col-span-1 bg-white/70 dark:bg-brand-card backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-lg flex flex-col justify-between">
-              <div class="flex items-center space-x-4">
+            <!-- Profile & Settings Stack -->
+            <div class="md:col-span-1 space-y-6 flex flex-col">
+              <!-- Profile Card -->
+              <div class="bg-white/70 dark:bg-brand-card backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-lg flex items-center space-x-4">
                 <div class="w-16 h-16 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-100 dark:border-indigo-500/30 text-2xl font-bold">
                   {{ (patient().first_name || '?')[0] }}
                 </div>
@@ -51,6 +53,56 @@ import { Chart } from 'chart.js/auto';
                   <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
                     <i class="fa-solid fa-chart-bar mr-1"></i> {{ sessions().length }} {{ i18n.t('clinic.sessions') }}
                   </p>
+                </div>
+              </div>
+
+              <!-- Configuration Card -->
+              <div class="bg-white/70 dark:bg-brand-card backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-6 shadow-lg">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-200 dark:border-white/5 pb-2">
+                  <i class="fa-solid fa-sliders text-brand-accent"></i>
+                  <span>{{ i18n.currentLang() === 'th' ? 'ตั้งค่าเป้าหมายการฝึก' : 'Game Settings' }}</span>
+                </h3>
+                
+                <div class="space-y-4">
+                  <!-- Reps Input -->
+                  <div>
+                    <label class="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                      {{ i18n.currentLang() === 'th' ? 'จำนวนครั้งเป้าหมาย (ครั้ง)' : 'Target Reps (count)' }}
+                    </label>
+                    <div class="flex items-center space-x-3">
+                      <button type="button" (click)="adjustReps(-1)" class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold transition-all border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">-</button>
+                      <input type="number" [ngModel]="editTargetReps()" (ngModelChange)="editTargetReps.set($event)" class="flex-1 w-16 text-center py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-extrabold outline-none focus:ring-2 focus:ring-brand-accent" min="1" max="100">
+                      <button type="button" (click)="adjustReps(1)" class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold transition-all border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Hold Duration Input -->
+                  <div>
+                    <label class="block text-sm font-bold text-slate-600 dark:text-slate-300 mb-1.5">
+                      {{ i18n.currentLang() === 'th' ? 'เวลาที่ต้องค้างไว้ในโซน (วินาที)' : 'Hold Duration (Seconds)' }}
+                    </label>
+                    <div class="flex items-center space-x-3">
+                      <button type="button" (click)="adjustDuration(-0.5)" class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold transition-all border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">-</button>
+                      <input type="number" [ngModel]="editHoldDurationMs() / 1000" (ngModelChange)="setHoldDurationFromSeconds($event)" step="0.5" class="flex-1 w-16 text-center py-2 px-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white font-extrabold outline-none focus:ring-2 focus:ring-brand-accent" min="0.5" max="30">
+                      <button type="button" (click)="adjustDuration(0.5)" class="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center font-bold transition-all border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white">+</button>
+                    </div>
+                  </div>
+
+                  <!-- Notification / Status Banner -->
+                  <div *ngIf="showSettingsSuccess()" class="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 p-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>{{ i18n.currentLang() === 'th' ? 'บันทึกการตั้งค่าสำเร็จ' : 'Settings saved successfully' }}</span>
+                  </div>
+                  <div *ngIf="showSettingsError()" class="bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 p-2.5 rounded-lg text-xs font-bold text-center flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ i18n.currentLang() === 'th' ? 'เกิดข้อผิดพลาดในการบันทึก' : 'Failed to save settings' }}</span>
+                  </div>
+
+                  <!-- Save Button -->
+                  <button type="button" (click)="saveSettings()" [disabled]="isSavingSettings()" class="w-full py-2.5 bg-brand-accent hover:bg-indigo-600 disabled:bg-slate-300 disabled:dark:bg-slate-800 text-white font-black text-sm rounded-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border-0 shadow-md">
+                    <i class="fa-solid" [ngClass]="isSavingSettings() ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                    <span>{{ i18n.currentLang() === 'th' ? 'บันทึกการตั้งค่า' : 'Save Settings' }}</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -427,6 +479,12 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
   public i18n = inject(I18nService);
   public themeService = inject(ThemeService);
 
+  public editTargetReps = signal<number>(15);
+  public editHoldDurationMs = signal<number>(2000);
+  public isSavingSettings = signal<boolean>(false);
+  public showSettingsSuccess = signal<boolean>(false);
+  public showSettingsError = signal<boolean>(false);
+
   public compareSessionIds = signal<string[]>([]);
   public compareColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
   private rawDataCache = new Map<string, RawDataPoint[]>();
@@ -508,8 +566,57 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
     this.sessions.set(sessionData);
     this.isLoading.set(false);
 
+    if (profile) {
+      this.editTargetReps.set(profile.target_reps !== undefined && profile.target_reps !== null ? profile.target_reps : 15);
+      this.editHoldDurationMs.set(profile.hold_duration_ms !== undefined && profile.hold_duration_ms !== null ? profile.hold_duration_ms : 2000);
+    }
+
     // Render trend chart after data loads
     setTimeout(() => this.renderTrendChart(), 100);
+  }
+
+  adjustReps(amount: number) {
+    const newVal = Math.max(1, this.editTargetReps() + amount);
+    this.editTargetReps.set(newVal);
+  }
+
+  adjustDuration(amountSeconds: number) {
+    const currentSeconds = this.editHoldDurationMs() / 1000;
+    const newSeconds = Math.max(0.5, currentSeconds + amountSeconds);
+    this.editHoldDurationMs.set(Math.round(newSeconds * 1000));
+  }
+
+  setHoldDurationFromSeconds(secs: number) {
+    const num = Number(secs);
+    if (!isNaN(num) && num > 0) {
+      this.editHoldDurationMs.set(Math.round(num * 1000));
+    }
+  }
+
+  async saveSettings() {
+    this.isSavingSettings.set(true);
+    this.showSettingsSuccess.set(false);
+    this.showSettingsError.set(false);
+    
+    const success = await this.dataSync.updatePatientSettings(
+      this.patientId,
+      this.editTargetReps(),
+      this.editHoldDurationMs()
+    );
+
+    this.isSavingSettings.set(false);
+    if (success) {
+      this.showSettingsSuccess.set(true);
+      // Refresh patient profile data to update local view
+      const updatedProfile = await this.dataSync.fetchPatientProfile(this.patientId);
+      if (updatedProfile) {
+        this.patient.set(updatedProfile);
+      }
+      setTimeout(() => this.showSettingsSuccess.set(false), 3000);
+    } else {
+      this.showSettingsError.set(true);
+      setTimeout(() => this.showSettingsError.set(false), 3000);
+    }
   }
 
   private renderTrendChart() {

@@ -1,71 +1,86 @@
-import { Component, OnInit, effect, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { CtarLogicService } from '../../services/ctar-logic.service';
 import { ZenBalloonComponent } from '../zen-balloon/zen-balloon.component';
 import { I18nService } from '../../services/i18n.service';
+import { SupabaseService } from '../../services/supabase.service';
+import { DataSyncService } from '../../services/data-sync.service';
 
 @Component({
   selector: 'app-game',
   standalone: true,
   imports: [CommonModule, ZenBalloonComponent],
   template: `
-    <div class="min-h-screen pb-10 relative z-10 text-slate-800 dark:text-slate-200 p-4 sm:p-6 lg:p-8">
-      <div class="max-w-5xl mx-auto">
-        
-        <div class="flex flex-col sm:flex-row justify-between items-center mb-6 bg-white/70 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-2xl border border-white/20 shadow-lg gap-4">
-          <div class="flex items-center space-x-3 w-full sm:w-auto">
-             <button (click)="goBack()" class="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors shrink-0">
-               <i class="fa-solid fa-arrow-left text-lg"></i>
-             </button>
-             <div class="w-12 h-12 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-xl flex items-center justify-center border border-indigo-200 dark:border-indigo-500/30 shrink-0">
-               <i class="fa-solid fa-gamepad text-xl"></i>
-             </div>
-             <div>
-               <h3 class="font-bold text-lg text-slate-800 dark:text-white">{{ i18n.t('game.activeSession') }}</h3>
-               <p class="text-base text-slate-500 dark:text-slate-400">{{ i18n.t('game.targetReps') }} {{ targetReps }}</p>
-             </div>
-          </div>
-          <button 
-            (click)="finishSession()"
-            class="px-6 min-h-[48px] bg-rose-50 dark:bg-rose-500/20 border border-rose-200 dark:border-rose-500/50 hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white font-medium text-base rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(244,63,94,0.2)] flex items-center space-x-2">
-            <i class="fa-solid fa-flag-checkered"></i>
-            <span>{{ i18n.t('game.finish') }}</span>
-          </button>
-        </div>
-
-        <div class="h-[600px] w-full">
-          <app-zen-balloon 
-            class="w-full h-full block"
-            [currentForce]="ctar.currentForce" 
-            [peakForce]="ctar.peakForce"
-            [maxForceLimit]="ctar.calibrationMaxForce()"
-            [currentRep]="ctar.repCount()"
-            [targetReps]="targetReps"
-            (repCompleted)="onGameRep()">
-          </app-zen-balloon>
-        </div>
-
+    <div class="game-layout-root h-screen max-h-screen overflow-hidden flex flex-col relative z-10 text-slate-800 dark:text-slate-200 p-3 sm:p-4 md:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950">
+      <div class="max-w-[460px] mx-auto w-full h-full flex flex-col min-h-0 justify-center">
+        <app-zen-balloon 
+          class="w-full h-full block min-h-0"
+          [currentForce]="ctar.currentForce" 
+          [peakForce]="ctar.peakForce"
+          [maxForceLimit]="ctar.calibrationMaxForce()"
+          [currentRep]="ctar.repCount()"
+          [targetReps]="targetReps()"
+          [requiredHoldTimeMs]="holdDurationMs()"
+          (repCompleted)="onGameRep()">
+        </app-zen-balloon>
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    @media (max-height: 800px) {
+      .game-layout-root {
+        padding: 0.5rem !important;
+      }
+    }
+  `]
 })
-export class GameComponent implements OnInit {
-  public targetReps = 15;
+export class GameComponent implements OnInit, OnDestroy {
+  public targetReps = signal<number>(15);
+  public holdDurationMs = signal<number>(2000);
   public i18n = inject(I18nService);
+
+  private sessionEnding = false;
+  private endTimer: any;
+  private supabase = inject(SupabaseService);
+  private dataSync = inject(DataSyncService);
 
   constructor(public ctar: CtarLogicService, private router: Router) {
     effect(() => {
-      if (this.ctar.repCount() >= this.targetReps) {
-        this.finishSession();
+      if (this.ctar.repCount() >= this.targetReps() && !this.sessionEnding) {
+        this.sessionEnding = true;
+        // Let the final rep's success chime + voice cue and the celebration
+        // message play out before yanking the user to the summary page
+        this.endTimer = setTimeout(() => this.finishSession(), 2500);
       }
     });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.ctar.resetSession();
     if (this.ctar.calibrationMaxForce() === 0) {
-      this.router.navigate(['/connect']);
+      this.router.navigate(['/calibrate']);
+      return;
+    }
+
+    // Fetch custom settings for this patient
+    const user = this.supabase.currentUser();
+    if (user) {
+      const profile = await this.dataSync.fetchPatientProfile(user.id);
+      if (profile) {
+        if (profile.target_reps !== undefined && profile.target_reps !== null) {
+          this.targetReps.set(profile.target_reps);
+        }
+        if (profile.hold_duration_ms !== undefined && profile.hold_duration_ms !== null) {
+          this.holdDurationMs.set(profile.hold_duration_ms);
+        }
+      }
+    }
+  }
+
+  ngOnDestroy() {
+    if (this.endTimer) {
+      clearTimeout(this.endTimer);
     }
   }
 
@@ -75,9 +90,5 @@ export class GameComponent implements OnInit {
 
   finishSession() {
     this.router.navigate(['/summary']);
-  }
-
-  goBack() {
-    this.router.navigate(['/dashboard']);
   }
 }
