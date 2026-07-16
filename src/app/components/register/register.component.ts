@@ -96,7 +96,7 @@ export type User = z.infer<typeof UserSchema>;
               <button 
                 type="button"
                 (click)="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-450 dark:text-slate-500 hover:text-slate-750 dark:hover:text-slate-300 outline-none border-none bg-transparent cursor-pointer">
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 outline-none border-none bg-transparent cursor-pointer z-10">
                 <i class="fa-solid" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
               </button>
             </div>
