@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Zen Tea — Redesign Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=Noto+Sans+Thai:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     Zen Tea — biofeedback redesign prototype
+     Mechanic: pour tea (force) into the cup, keep the level inside
+     the target band without spilling, hold 2s = one cup served,
+     then set the pot down (release) to brew the next.
+     Standalone preview. Drag (mouse / finger) up-down to pour.
+     Palette: on-brand slate / amber / emerald (calm-clinical).
+     ============================================================ */
+  :root {
+    --bg: #e9eef2;
+    --card: #ffffff;
+    --line: #e2e8f0;
+    --line-strong: #cbd5e1;
+    --ink: #0f172a;
+    --ink-2: #334155;
+    --muted: #64748b;
+
+    --amber: #f59e0b;
+    --amber-400: #fbbf24;
+    --amber-600: #d97706;
+    --amber-700: #b45309;
+    --amber-900: #78350f;
+
+    --tea-top: #fbbf24;
+    --tea-mid: #f59e0b;
+    --tea-deep: #c2750a;
+
+    --emerald: #10b981;
+    --emerald-600: #059669;
+    --rose: #e11d48;
+    --rose-500: #f43f5e;
+    --sky-600: #0284c7;
+    --sky: #38bdf8;
+
+    --z-glow: 1; --z-content: 10; --z-readout: 20; --z-overlay: 40; --z-toast: 60;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --radius: 28px;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: "Inter", "Noto Sans Thai", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(120% 80% at 50% -10%, #f4f7f9, var(--bg) 55%, #dde5ea 100%);
+    color: var(--ink);
+    min-height: 100%;
+    display: grid; place-items: center;
+    padding: clamp(8px, 3vw, 28px);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  .card {
+    position: relative;
+    width: 100%; max-width: 460px;
+    height: min(92svh, 860px);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 30px -12px rgba(15,23,42,0.18);
+    padding: clamp(16px, 4vw, 26px);
+    display: flex; flex-direction: column;
+    overflow: hidden; isolation: isolate; touch-action: none;
+  }
+  .glow {
+    position: absolute; inset: auto -60px 26% auto;
+    width: 280px; height: 280px;
+    background: radial-gradient(circle, rgba(245,158,11,0.14), transparent 70%);
+    filter: blur(44px); z-index: var(--z-glow); pointer-events: none;
+  }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding-bottom: 16px; margin-bottom: 14px;
+    border-bottom: 1px solid var(--line); z-index: var(--z-content);
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .titles { min-width: 0; }
+  .titles h1 { margin: 0; font-size: clamp(1.05rem, 4.4vw, 1.3rem); font-weight: 900; letter-spacing: -0.01em; line-height: 1.1; text-wrap: balance; }
+  .titles p { margin: 2px 0 0; font-size: .9rem; font-weight: 600; color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .icon-btn {
+    width: 46px; height: 46px; border-radius: 14px; border: 1px solid var(--line);
+    background: #fff; color: var(--muted); display: grid; place-items: center; cursor: pointer;
+    transition: background .2s, color .2s, border-color .2s, transform .12s var(--ease); flex-shrink: 0;
+  }
+  .icon-btn:hover { background: #f8fafc; color: var(--ink); }
+  .icon-btn:active { transform: scale(0.94); }
+  .icon-btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+  .icon-btn.sound-on { color: var(--amber-600); border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.06); }
+  .finish-btn {
+    display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; height: 46px;
+    border-radius: 14px; border: 1px solid #fecdd3; background: #fff1f2; color: var(--rose);
+    font-weight: 800; font-size: .95rem; cursor: pointer; transition: background .2s, transform .12s var(--ease); white-space: nowrap;
+  }
+  .finish-btn:hover { background: #ffe4e6; }
+  .finish-btn:active { transform: scale(0.96); }
+  .finish-btn:focus-visible { outline: 3px solid #fda4af; outline-offset: 2px; }
+  .finish-btn span { display: none; }
+  @media (min-width: 380px) { .finish-btn span { display: inline; } }
+
+  /* Title row */
+  .game-title { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 10px; z-index: var(--z-content); }
+  .game-title-row { display: flex; align-items: center; gap: 12px; }
+  .game-title-row .emblem {
+    width: 44px; height: 44px; border-radius: 13px; background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.22); display: grid; place-items: center; color: var(--amber-600);
+  }
+  .game-title-row h2 { margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); font-weight: 900; letter-spacing: -0.02em; }
+
+  /* served cups tray (reps) */
+  .tray { display: flex; align-items: center; gap: 7px; padding: 6px 14px; border-radius: 999px;
+    background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); }
+  .tray .lbl { font-weight: 800; color: var(--amber-700); font-size: .9rem; margin-right: 2px; }
+  .tray .cupdot { width: 18px; height: 18px; color: var(--line-strong); transition: transform .35s var(--ease), color .35s; }
+  .tray .cupdot.filled { color: var(--amber-600); }
+  .tray .cupdot.pop { transform: scale(1.45); }
+  .tray .frac { font-weight: 900; color: var(--amber-700); font-variant-numeric: tabular-nums; margin-left: 4px; }
+
+  /* Play scene */
+  .play { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; z-index: var(--z-content); cursor: ns-resize; }
+
+  /* force readout */
+  .readout { position: absolute; right: clamp(0px, 2vw, 12px); top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; align-items: center; text-align: center; pointer-events: none; user-select: none; z-index: var(--z-readout); }
+  .readout .label { font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .readout .value { font-size: clamp(2.2rem, 11vw, 3.1rem); font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; color: var(--ink-2); transition: color .2s; }
+  .readout .value .unit { font-size: .45em; vertical-align: top; font-weight: 800; }
+  .readout.in-zone .value { color: var(--amber-600); text-shadow: 0 0 16px rgba(245,158,11,0.35); }
+  .readout.over .value { color: var(--rose); }
+  .readout.resting .label, .readout.resting .value { color: var(--sky-600); }
+
+  /* steam */
+  .steam { position: absolute; left: 50%; bottom: 64%; transform: translateX(-50%); width: 90px; height: 90px; pointer-events: none; opacity: 0; transition: opacity .5s; z-index: 4; }
+  .steam.on { opacity: .7; }
+  .steam path { stroke: #cbd5e1; stroke-width: 4; fill: none; stroke-linecap: round; opacity: 0; }
+  .steam.on path { animation: rise 2.6s ease-in-out infinite; }
+  .steam path:nth-child(2) { animation-delay: .5s; }
+  .steam path:nth-child(3) { animation-delay: 1s; }
+  @keyframes rise {
+    0% { opacity: 0; transform: translateY(14px) scaleY(.7); }
+    35% { opacity: .8; }
+    100% { opacity: 0; transform: translateY(-22px) scaleY(1.15); }
+  }
+
+  /* pour stream */
+  .stream { position: absolute; top: 4%; left: 50%; transform: translateX(-50%); width: 7px; border-radius: 4px;
+    background: linear-gradient(180deg, rgba(251,191,36,0), var(--amber-400) 30%, var(--amber-600));
+    opacity: 0; transition: opacity .18s, height .09s linear; z-index: 5; pointer-events: none;
+    box-shadow: 0 0 10px rgba(245,158,11,0.5); }
+  .stream.pouring { opacity: .92; }
+  .stream::after { content: ""; position: absolute; inset: 0; border-radius: 4px;
+    background: linear-gradient(180deg, transparent, rgba(255,255,255,.5), transparent);
+    background-size: 100% 16px; animation: flow .5s linear infinite; }
+  @keyframes flow { to { background-position: 0 16px; } }
+
+  /* The cup */
+  .cup-stage { position: relative; width: clamp(168px, 50vw, 224px); height: 100%; max-height: 360px; display: flex; align-items: center; justify-content: center; }
+  .cup {
+    position: relative;
+    width: 100%;
+    height: clamp(168px, 44vw, 210px);
+    transition: transform .35s var(--ease);
+  }
+  .cup.served { transform: translateX(180%) rotate(8deg); opacity: 0; }
+  .cup.enter { animation: cupIn .45s var(--ease); }
+  @keyframes cupIn { from { transform: translateX(-120%); opacity: 0; } }
+
+  /* handle */
+  .cup .handle {
+    position: absolute; right: -26px; top: 32%; width: 46px; height: 56px;
+    border: 9px solid #e2e8f0; border-left: none; border-radius: 0 30px 30px 0;
+    background: transparent;
+  }
+  .cup-body {
+    position: absolute; inset: 0 8% 0 8%;
+    background: linear-gradient(100deg, #ffffff, #f1f5f9 55%, #e7edf2);
+    border: 1px solid #e2e8f0;
+    border-radius: 16px 16px 96px 96px / 10px 10px 80px 80px;
+    overflow: hidden;
+    box-shadow: inset 14px 0 26px rgba(255,255,255,.7), inset -16px -4px 26px rgba(15,23,42,.08),
+                0 16px 28px -14px rgba(15,23,42,.35);
+  }
+  /* rim ellipse */
+  .cup .rim {
+    position: absolute; top: -7px; left: 8%; right: 8%; height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+    border: 1px solid #d8e0e7;
+    box-shadow: inset 0 3px 5px rgba(15,23,42,.10);
+    z-index: 3;
+  }
+
+  /* liquid */
+  .liquid {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 0%;
+    background: linear-gradient(180deg, var(--tea-mid), var(--tea-deep));
+    transition: height .09s linear, background .3s;
+    will-change: height;
+  }
+  .liquid::before {  /* meniscus / surface sheen */
+    content: ""; position: absolute; top: -7px; left: 0; right: 0; height: 14px;
+    background: var(--tea-top);
+    border-radius: 50%;
+    box-shadow: 0 0 12px rgba(251,191,36,.5);
+  }
+  .liquid .wave {
+    position: absolute; top: -8px; left: -20%; width: 140%; height: 16px;
+    background-repeat: repeat-x;
+    background-size: 90px 16px;
+    background-image: radial-gradient(circle at 45px -2px, rgba(255,255,255,.45) 14px, transparent 15px);
+    animation: waveMove 3.2s linear infinite;
+    opacity: .5;
+  }
+  @keyframes waveMove { to { transform: translateX(90px); } }
+  .liquid.spill { background: linear-gradient(180deg, #fb7185, var(--tea-deep)); }
+
+  /* target band inside the cup */
+  .band {
+    position: absolute; left: 0; right: 0; z-index: 2;
+    background: rgba(245,158,11,0.14);
+    border-top: 2.5px solid var(--amber-700);
+    border-bottom: 2.5px dashed var(--amber-600);
+    transition: bottom .4s var(--ease), height .4s var(--ease), box-shadow .25s, background .25s;
+  }
+  .band.active { background: rgba(245,158,11,0.30); box-shadow: 0 0 22px rgba(245,158,11,0.45) inset; }
+  .band .chip {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-size: .66rem; font-weight: 900; letter-spacing: .03em; text-transform: uppercase;
+    color: var(--amber-900); background: rgba(255,255,255,.8); padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+  }
+  /* overflow danger marker near rim */
+  .spill-mark {
+    position: absolute; left: 0; right: 0; top: 4%; height: 2px;
+    background: repeating-linear-gradient(90deg, var(--rose-500) 0 8px, transparent 8px 14px);
+    opacity: .55; z-index: 2;
+  }
+
+  .saucer {
+    position: absolute; bottom: -2px; left: -8%; right: -8%; height: 22px;
+    background: radial-gradient(50% 120% at 50% 0, #f1f5f9, #dbe2e8);
+    border: 1px solid #d8e0e7; border-radius: 50%;
+    box-shadow: 0 12px 18px -10px rgba(15,23,42,.35); z-index: 0;
+  }
+
+  /* Progress + feedback */
+  .progress-block { margin-top: 14px; z-index: var(--z-content); }
+  .progress-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .progress-head .lbl { font-size: .85rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+  .progress-head .pct { font-weight: 900; font-size: 1.05rem; font-variant-numeric: tabular-nums; color: var(--amber-600); }
+  .progress-track { height: 16px; border-radius: 999px; background: #eef2f7; border: 1px solid var(--line); overflow: hidden; box-shadow: inset 0 1px 3px rgba(15,23,42,0.07); }
+  .progress-fill { height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, var(--amber-600), var(--amber)); transition: width .1s linear, background .25s; }
+  .progress-fill.resting { background: linear-gradient(90deg, var(--sky-600), var(--sky)); }
+  .feedback { margin-top: 12px; text-align: center; font-size: clamp(1.05rem, 4.6vw, 1.35rem); font-weight: 800; min-height: 1.8em; color: var(--ink-2); transition: color .2s; z-index: var(--z-content); }
+  .feedback.in-zone { color: var(--amber-700); }
+  .feedback.resting { color: var(--sky-600); }
+  .feedback.over { color: var(--rose); }
+  .hint { text-align: center; margin-top: 6px; font-size: .8rem; color: var(--muted); z-index: var(--z-content); }
+  .hint kbd { font-family: inherit; font-weight: 700; background: #f1f5f9; border: 1px solid var(--line-strong); border-radius: 6px; padding: 1px 6px; font-size: .85em; }
+
+  /* Overlays */
+  .overlay { position: absolute; inset: 0; z-index: var(--z-overlay); display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(15,23,42,0.42); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: fade .25s ease; }
+  .overlay[hidden] { display: none; }
+  @keyframes fade { from { opacity: 0; } }
+  .sheet { width: 100%; max-width: 330px; background: rgba(255,255,255,0.97); border: 1px solid var(--line); border-radius: 22px; box-shadow: 0 24px 50px -12px rgba(15,23,42,0.4); padding: 26px 22px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; animation: pop .3s var(--ease); }
+  @keyframes pop { from { opacity: 0; transform: scale(.92) translateY(8px); } }
+  .sheet h2 { margin: 0; font-size: 1.5rem; font-weight: 900; letter-spacing: -0.01em; }
+  .sheet .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; width: 100%; }
+  .sheet .steps li { font-size: 1.02rem; font-weight: 700; color: var(--ink-2); display: flex; align-items: center; gap: 10px; text-align: left; }
+  .sheet .steps li .num { width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0; background: #f1f5f9; color: var(--ink-2); display: grid; place-items: center; font-weight: 900; font-size: .9rem; }
+  .sheet .cue { font-weight: 900; color: var(--amber-700); background: rgba(245,158,11,0.12); border-radius: 12px; padding: 10px 12px; width: 100%; }
+  .btn { width: 100%; min-height: 52px; border-radius: 16px; border: 0; font-size: 1.05rem; font-weight: 800; cursor: pointer; transition: transform .12s var(--ease), filter .2s, background .2s; }
+  .btn:active { transform: scale(0.97); }
+  .btn:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+  .btn-amber { background: var(--amber-600); color: #fff; box-shadow: 0 8px 18px -6px rgba(217,119,6,0.6); }
+  .btn-amber:hover { filter: brightness(1.05); }
+  .btn-primary { background: var(--emerald); color: #fff; box-shadow: 0 8px 18px -6px rgba(16,185,129,0.6); }
+  .btn-ghost { background: #f1f5f9; color: var(--ink-2); min-height: 46px; font-size: .98rem; font-weight: 700; border: 1px solid var(--line); }
+  .btn-ghost:hover { background: #e8edf3; }
+  .count-overlay { flex-direction: column; gap: 18px; color: #fff; }
+  .count-overlay .lead { font-weight: 800; letter-spacing: .12em; text-transform: uppercase; font-size: 1rem; text-shadow: 0 2px 8px rgba(0,0,0,.4); }
+  .count-num { font-size: clamp(6rem, 30vw, 9rem); font-weight: 900; color: var(--amber); line-height: 1; font-variant-numeric: tabular-nums; text-shadow: 0 6px 20px rgba(0,0,0,.35); }
+  .count-num.pop { animation: cpop .28s var(--ease); }
+  @keyframes cpop { from { transform: scale(1.35); opacity: .3; } }
+  .stats { display: flex; gap: 10px; width: 100%; }
+  .stat { flex: 1; background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 12px 8px; }
+  .stat .n { font-size: 1.7rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .stat .t { font-size: .78rem; font-weight: 700; color: var(--muted); margin-top: 2px; }
+  .check-circle { width: 64px; height: 64px; border-radius: 50%; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); display: grid; place-items: center; color: var(--emerald-600); }
+  .check-circle svg { width: 34px; height: 34px; }
+
+  .proto-badge { position: fixed; left: 12px; bottom: 12px; font-size: .72rem; font-weight: 700; color: var(--muted); background: rgba(255,255,255,.8); border: 1px solid var(--line); padding: 5px 10px; border-radius: 999px; z-index: var(--z-toast); backdrop-filter: blur(4px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="card" id="card" aria-label="Zen Tea training">
+    <div class="glow"></div>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="icon-btn" id="backBtn" aria-label="ออกจากการฝึก" title="ออกจากการฝึก">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+        <div class="titles">
+          <h1>กำลังฝึกซ้อม</h1>
+          <p>เป้าหมาย: <span id="targetRepsLbl">3</span> ถ้วย</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn sound-on" id="muteBtn" aria-label="ปิดเสียงพากย์" aria-pressed="false" title="เสียงพากย์">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9 9 0 0 1 0 14"/></svg>
+        </button>
+        <button class="finish-btn" id="finishBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M4 4h12l-2 4 2 4H4"/></svg>
+          <span>จบการฝึก</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Title row -->
+    <div class="game-title">
+      <div class="game-title-row">
+        <div class="emblem">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg>
+        </div>
+        <h2>ชงชาสมาธิ</h2>
+      </div>
+      <div class="tray" id="tray">
+        <span class="lbl">เสิร์ฟแล้ว</span>
+        <span class="frac"><span id="repCount">0</span>/<span id="repTotal">3</span></span>
+      </div>
+    </div>
+
+    <!-- Play scene -->
+    <div class="play" id="play">
+      <div class="readout" id="readout">
+        <span class="label">ระดับ</span>
+        <span class="value"><span id="forceVal">0</span><span class="unit">%</span></span>
+      </div>
+
+      <!-- steam -->
+      <svg class="steam" id="steam" viewBox="0 0 90 90" aria-hidden="true">
+        <path d="M30 80 q-8 -18 0 -32 q8 -14 0 -28"/>
+        <path d="M45 84 q-8 -18 0 -32 q8 -14 0 -28"/>
+        <path d="M60 80 q-8 -18 0 -32 q8 -14 0 -28"/>
+      </svg>
+
+      <div class="cup-stage">
+        <!-- pour stream -->
+        <div class="stream" id="stream"></div>
+
+        <div class="cup" id="cup">
+          <div class="handle"></div>
+          <div class="cup-body">
+            <div class="liquid" id="liquid"><div class="wave"></div></div>
+            <div class="spill-mark"></div>
+            <div class="band" id="band"><span class="chip">เส้นพอดี</span></div>
+          </div>
+          <div class="rim"></div>
+        </div>
+        <div class="saucer"></div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-block">
+      <div class="progress-head">
+        <span class="lbl" id="progressLbl">ชงชา</span>
+        <span class="pct"><span id="progressPct">0</span>%</span>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <div class="feedback" id="feedback" role="status" aria-live="polite">ค่อย ๆ เทให้น้ำชาถึงเส้นพอดี</div>
+    <div class="hint">ลาก (นิ้ว/เมาส์) ขึ้น-ลงเพื่อเท · หรือกด <kbd>↑</kbd> <kbd>↓</kbd></div>
+
+    <!-- Ready overlay -->
+    <div class="overlay" id="readyOverlay">
+      <div class="sheet">
+        <div class="emblem" style="width:56px;height:56px;border-radius:16px;">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:var(--amber-600)"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg>
+        </div>
+        <h2>เตรียมชงชา</h2>
+        <ul class="steps">
+          <li><span class="num">1</span> วางเครื่องมือไว้บนอก</li>
+          <li><span class="num">2</span> วางคางบนแผ่นรอง</li>
+        </ul>
+        <div class="cue">👇 ก้มกดเบา ๆ เพื่อเริ่มรินชา</div>
+        <button class="btn btn-amber" id="startBtn">เริ่มชงชา</button>
+        <button class="btn btn-ghost" id="readyBack">ย้อนกลับ</button>
+      </div>
+    </div>
+
+    <!-- Countdown overlay -->
+    <div class="overlay count-overlay" id="countOverlay" hidden>
+      <span class="lead">ยกกาขึ้น เตรียมตัว...</span>
+      <div class="count-num" id="countNum">3</div>
+    </div>
+
+    <!-- Finish-confirm overlay -->
+    <div class="overlay" id="finishOverlay" hidden>
+      <div class="sheet">
+        <h2>จบการฝึกตอนนี้?</h2>
+        <p style="margin:0;font-weight:700;color:var(--ink-2);line-height:1.5;">
+          เสิร์ฟไปแล้ว <strong id="finishReps">0</strong> จาก <span id="finishTotal">3</span> ถ้วย
+          ระบบจะบันทึกผลเท่าที่ทำได้
+        </p>
+        <button class="btn btn-primary" id="keepBtn">ฝึกต่อ</button>
+        <button class="btn btn-ghost" id="confirmFinishBtn">จบและดูผล</button>
+      </div>
+    </div>
+
+    <!-- Session complete -->
+    <div class="overlay" id="doneOverlay" hidden>
+      <div class="sheet">
+        <div class="check-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>เสิร์ฟครบแล้ว!</h2>
+        <p style="margin:0;font-weight:700;color:var(--ink-2)">เยี่ยมมากครับ วันนี้ชงชาได้ครบตามเป้าหมาย</p>
+        <div class="stats">
+          <div class="stat"><div class="n" id="doneReps">3</div><div class="t">ถ้วยสำเร็จ</div></div>
+          <div class="stat"><div class="n" id="doneTime">0:00</div><div class="t">เวลารวม</div></div>
+        </div>
+        <button class="btn btn-amber" id="replayBtn">ฝึกอีกครั้ง</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="proto-badge">Prototype · Zen Tea</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---- Model (mirrors production logic) ----
+  const CAL_MAX = 100;
+  const TARGET_WIDTH = 15;
+  const HOLD_MS = 2000;
+  const REST_MS = 2000;
+  const RELEASE_THRESHOLD = 12;
+  const START_THRESHOLD = Math.max(3, CAL_MAX * 0.25);
+  const TARGET_REPS = 3;
+  const TICK = 50;
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  const $ = (id) => document.getElementById(id);
+  const card = $("card"), play = $("play");
+  const liquid = $("liquid"), band = $("band"), cup = $("cup"), stream = $("stream"), steam = $("steam");
+  const readout = $("readout"), forceVal = $("forceVal");
+  const progressFill = $("progressFill"), progressPct = $("progressPct"), progressLbl = $("progressLbl"), progressBar = $("progressBar");
+  const feedback = $("feedback"), tray = $("tray");
+  const readyOverlay = $("readyOverlay"), countOverlay = $("countOverlay"), countNum = $("countNum"),
+        finishOverlay = $("finishOverlay"), doneOverlay = $("doneOverlay");
+
+  $("repTotal").textContent = TARGET_REPS;
+  $("targetRepsLbl").textContent = TARGET_REPS;
+  $("finishTotal").textContent = TARGET_REPS;
+
+  // served-cup dots
+  const dots = [];
+  for (let i = 0; i < TARGET_REPS; i++) {
+    const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    s.setAttribute("viewBox", "0 0 24 24"); s.setAttribute("class", "cupdot");
+    s.innerHTML = '<path d="M18 8h1a4 4 0 0 1 0 8h-1" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 8h15v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V8z" fill="currentColor" opacity=".18" stroke="currentColor" stroke-width="2"/>';
+    tray.insertBefore(s, tray.querySelector(".frac"));
+    dots.push(s);
+  }
+
+  // ---- State ----
+  let state = "ready", phase = "squeeze";
+  let force = 0, targetForce = 0, pointerActive = false;
+  let targetMin = 70, targetMax = 85, inZone = false;
+  let holdMs = 0, restMs = 0, restViolationMs = 0;
+  let repCount = 0, sessionStart = 0, countTimer = null, loopTimer = null;
+
+  const visualMax = () => Math.max(targetMax / 0.78, 10);
+  const posOf = (f) => Math.max(0, Math.min(98, (f / visualMax()) * 100));
+
+  function randomizeTarget() {
+    const min = 65 + Math.random() * 15;
+    targetMin = min; targetMax = min + TARGET_WIDTH;
+  }
+  function layoutZones() {
+    const bMin = posOf(targetMin), bMax = posOf(targetMax);
+    band.style.bottom = bMin + "%";
+    band.style.height = (bMax - bMin) + "%";
+  }
+  function renderLiquid() {
+    const p = posOf(force);
+    liquid.style.height = p + "%";
+    const spilling = p >= 94;
+    liquid.classList.toggle("spill", spilling);
+    // pour stream from rim down to the surface, only while actively pouring
+    const pouring = pointerActive && state === "playing" && phase === "squeeze" && force > 4;
+    stream.classList.toggle("pouring", pouring);
+    if (pouring) stream.style.height = Math.max(8, (96 - p)) + "%";
+  }
+  function setForceReadout() {
+    forceVal.textContent = Math.round((force / CAL_MAX) * 100);
+    readout.classList.toggle("in-zone", inZone);
+    readout.classList.toggle("over", !inZone && phase === "squeeze" && force > targetMax);
+    readout.classList.toggle("resting", phase === "release");
+  }
+  function setSteam(on) { steam.classList.toggle("on", !!on && !reduceMotion); }
+
+  function setFeedback() {
+    feedback.classList.remove("in-zone", "resting", "over");
+    if (phase === "release") {
+      feedback.classList.add("resting");
+      feedback.textContent = force >= RELEASE_THRESHOLD
+        ? "ยกกาขึ้น วางพักสักครู่"
+        : "พักสักครู่... อีก " + Math.max(0, Math.ceil((REST_MS - restMs) / 1000)) + " วินาที";
+      return;
+    }
+    if (inZone) {
+      feedback.classList.add("in-zone");
+      feedback.textContent = holdMs > HOLD_MS * 0.5 ? "อีกนิดเดียว คงระดับไว้!" : "พอดีเลย! คงระดับไว้...";
+    } else if (force > targetMax) {
+      feedback.classList.add("over");
+      feedback.textContent = "ระวังล้น เบาลงหน่อย";
+    } else {
+      feedback.textContent = "ค่อย ๆ เทให้น้ำชาถึงเส้นพอดี";
+    }
+  }
+  function setProgress(pct, resting) {
+    pct = Math.max(0, Math.min(100, pct));
+    progressFill.style.width = pct + "%";
+    progressFill.classList.toggle("resting", !!resting);
+    progressPct.textContent = Math.round(pct);
+    progressBar.setAttribute("aria-valuenow", Math.round(pct));
+    progressLbl.textContent = resting ? "พักถ้วย" : "ชงชา";
+  }
+  function setZoneVisual(active) {
+    band.classList.toggle("active", active);
+    setSteam(active);
+  }
+
+  // ---- Flow ----
+  function startCountdown() {
+    state = "countdown";
+    let n = 3;
+    countNum.textContent = n; countOverlay.hidden = false;
+    countNum.classList.add("pop"); setTimeout(() => countNum.classList.remove("pop"), 280);
+    countTimer = setInterval(() => {
+      n--;
+      if (n <= 0) { clearInterval(countTimer); countOverlay.hidden = true; startGame(); }
+      else { countNum.textContent = n; countNum.classList.remove("pop"); void countNum.offsetWidth; countNum.classList.add("pop"); }
+    }, 800);
+  }
+  function startGame() {
+    state = "playing"; phase = "squeeze";
+    holdMs = 0; restMs = 0; sessionStart = Date.now();
+    randomizeTarget(); layoutZones(); setProgress(0, false); setFeedback();
+  }
+  function completeRep() {
+    repCount++;
+    $("repCount").textContent = repCount;
+    const dot = dots[repCount - 1];
+    if (dot) { dot.classList.add("filled", "pop"); setTimeout(() => dot.classList.remove("pop"), 350); }
+
+    // serve the cup: slide it away, then a fresh empty cup enters
+    feedback.classList.remove("resting"); feedback.classList.add("in-zone");
+    feedback.textContent = "เสิร์ฟแล้ว 1 ถ้วย!";
+    setSteam(false); setZoneVisual(false);
+
+    if (repCount >= TARGET_REPS) { setTimeout(finishSession, 850); cup.classList.add("served"); return; }
+
+    cup.classList.add("served");
+    setTimeout(() => {
+      // reset for next cup
+      phase = "squeeze"; holdMs = 0; restMs = 0;
+      force = 0; targetForce = 0;
+      randomizeTarget(); layoutZones(); renderLiquid(); setProgress(0, false);
+      cup.classList.remove("served");
+      void cup.offsetWidth;
+      cup.classList.add("enter");
+      setTimeout(() => cup.classList.remove("enter"), 460);
+      if (state === "playing") setFeedback();
+    }, 520);
+  }
+  function finishSession() {
+    state = "finished";
+    setSteam(false); setZoneVisual(false); stream.classList.remove("pouring");
+    const secs = Math.round((Date.now() - sessionStart) / 1000);
+    $("doneReps").textContent = repCount;
+    $("doneTime").textContent = Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0");
+    doneOverlay.hidden = false;
+  }
+
+  // ---- Game loop ----
+  function loop() {
+    const goal = (pointerActive || keyHeld) ? targetForce : 0;
+    force += (goal - force) * 0.28;
+    if (force < 0.4 && goal === 0) force = 0;
+
+    if (state === "ready") { if (force >= START_THRESHOLD) startCountdown(); renderLiquid(); setForceReadout(); return; }
+    if (state !== "playing") { renderLiquid(); setForceReadout(); return; }
+
+    if (phase === "squeeze") {
+      const nowIn = force >= targetMin && force <= targetMax;
+      if (nowIn !== inZone) { inZone = nowIn; setZoneVisual(inZone); }
+      if (inZone) {
+        holdMs += TICK;
+        if (holdMs >= HOLD_MS) {
+          phase = "release"; inZone = false; restMs = 0;
+          setZoneVisual(false); setProgress(0, true);
+        }
+      } else { holdMs = Math.max(0, holdMs - TICK); }
+      if (phase === "squeeze") setProgress((holdMs / HOLD_MS) * 100, false);
+    } else { // release
+      if (force < RELEASE_THRESHOLD) {
+        restViolationMs = 0; restMs += TICK;
+        setProgress((restMs / REST_MS) * 100, true);
+        if (restMs >= REST_MS) completeRep();
+      } else {
+        restViolationMs += TICK;
+        if (restViolationMs >= 300 && restMs > 0) { restMs = 0; setProgress(0, true); }
+      }
+    }
+    renderLiquid(); setForceReadout();
+    if (state === "playing") setFeedback();
+  }
+
+  // ---- Pointer → force ----
+  function forceFromClientY(clientY) {
+    const r = play.getBoundingClientRect();
+    const ratio = 1 - (clientY - r.top) / r.height;
+    return Math.max(0, Math.min(CAL_MAX * 1.1, ratio * CAL_MAX * 1.08));
+  }
+  function onDown(e) {
+    if (state === "finished" || state === "countdown") return;
+    if (e.target.closest("button")) return;
+    if (state === "ready") readyOverlay.hidden = true;
+    pointerActive = true;
+    try { card.setPointerCapture(e.pointerId); } catch (_) {}
+    targetForce = forceFromClientY(e.clientY);
+  }
+  const releasePointer = () => { pointerActive = false; targetForce = 0; };
+  card.addEventListener("pointerdown", onDown);
+  card.addEventListener("pointermove", (e) => { if (pointerActive) targetForce = forceFromClientY(e.clientY); });
+  card.addEventListener("pointerup", releasePointer);
+  card.addEventListener("pointercancel", releasePointer);
+
+  // ---- Keyboard ----
+  let keyHeld = false, keyForce = 0;
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      e.preventDefault(); keyHeld = true;
+      keyForce += e.key === "ArrowUp" ? 8 : -8;
+      keyForce = Math.max(0, Math.min(CAL_MAX * 1.05, keyForce));
+      targetForce = keyForce;
+    }
+  });
+  document.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") setTimeout(() => { keyHeld = false; keyForce = 0; }, 120);
+  });
+
+  // ---- Buttons ----
+  $("muteBtn").addEventListener("click", (e) => {
+    const b = e.currentTarget; const on = b.classList.toggle("sound-on");
+    b.setAttribute("aria-pressed", String(!on));
+    b.setAttribute("aria-label", on ? "ปิดเสียงพากย์" : "เปิดเสียงพากย์");
+  });
+  $("backBtn").addEventListener("click", openFinishOrLeave);
+  $("finishBtn").addEventListener("click", openFinishOrLeave);
+  $("readyBack").addEventListener("click", () => alert("ตัวอย่าง: กลับไปหน้า Dashboard"));
+  $("startBtn").addEventListener("click", () => { if (state !== "ready") return; readyOverlay.hidden = true; startCountdown(); });
+  function openFinishOrLeave() {
+    if (state === "playing" && repCount < TARGET_REPS) { $("finishReps").textContent = repCount; finishOverlay.hidden = false; }
+    else finishSession();
+  }
+  $("keepBtn").addEventListener("click", () => { finishOverlay.hidden = true; });
+  $("confirmFinishBtn").addEventListener("click", () => { finishOverlay.hidden = true; finishSession(); });
+  $("replayBtn").addEventListener("click", () => {
+    repCount = 0; $("repCount").textContent = 0; force = 0; targetForce = 0;
+    holdMs = 0; restMs = 0; inZone = false; phase = "squeeze";
+    dots.forEach(d => d.classList.remove("filled", "pop"));
+    doneOverlay.hidden = true; finishOverlay.hidden = true;
+    cup.classList.remove("served", "enter");
+    setZoneVisual(false); setSteam(false); stream.classList.remove("pouring");
+    setProgress(0, false); renderLiquid(); setFeedback();
+    state = "ready"; readyOverlay.hidden = false;
+  });
+
+  // ---- Init ----
+  randomizeTarget(); layoutZones(); renderLiquid(); setForceReadout();
+  readyOverlay.hidden = false;
+  loopTimer = setInterval(loop, TICK);
+  window.addEventListener("resize", () => { layoutZones(); renderLiquid(); });
+})();
+</script>
+</body>
+</html>

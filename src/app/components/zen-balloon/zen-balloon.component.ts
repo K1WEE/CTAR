@@ -1,100 +1,350 @@
-import { Component, Input, Output, EventEmitter, effect, Signal, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, effect, Signal, NgZone, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { trigger, transition, style, animate } from '@angular/animations';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { BiofeedbackService } from '../../services/biofeedback.service';
+import { BleService } from '../../services/ble.service';
+import { I18nService } from '../../services/i18n.service';
+import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.component';
 
 @Component({
   selector: 'app-zen-balloon',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ChinTuckDemoComponent],
+  animations: [
+    // Re-pops the countdown digit on every value change, then stays fully
+    // visible — unlike animate-ping which fades the number out while it shows
+    trigger('countdownPop', [
+      transition('* => *', [
+        style({ transform: 'scale(1.35)', opacity: 0.4 }),
+        animate('250ms ease-out', style({ transform: 'scale(1)', opacity: 1 })),
+      ]),
+    ]),
+  ],
   template: `
-    <div class="bg-white/70 dark:bg-brand-card backdrop-blur-xl rounded-3xl shadow-xl p-4 sm:p-6 w-full flex flex-col items-center border border-slate-200 dark:border-white/10 min-h-[400px] h-full relative overflow-hidden transition-colors duration-300">
-      <!-- Glow effect -->
-      <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-500 rounded-full blur-[80px] opacity-10 pointer-events-none"></div>
+    <div [@.disabled]="prefersReducedMotion" class="game-card bg-white dark:bg-brand-card rounded-3xl shadow-md p-4 sm:p-6 w-full flex flex-col items-center border border-slate-200 dark:border-slate-700 min-h-[450px] h-full relative overflow-hidden transition-colors duration-300">
+      
+      <!-- Ready State Overlay (Transparent backdrop, showing game behind it) -->
+      <div *ngIf="gameFlowState() === 'ready' && showReadyInstructions()" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <!-- Center translucent instruction card -->
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
+          <app-chin-tuck-demo size="sm" [showLabel]="false" class="mb-2"></app-chin-tuck-demo>
 
-      <div class="flex items-center space-x-3 mb-6 relative z-10 mt-2">
-         <div class="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/20 flex items-center justify-center text-rose-500 dark:text-rose-400 border border-rose-100 dark:border-transparent transition-colors duration-300">
-            <i class="fa-solid fa-parachute-box"></i>
-         </div>
-         <h2 class="text-xl font-bold text-slate-900 dark:text-white tracking-wide transition-colors duration-300">The Zen Balloon</h2>
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+            {{ i18n.currentLang() === 'th' ? 'เตรียมตัวเริ่มเกม' : 'Get Ready' }}
+          </h2>
+
+          <div class="text-slate-700 dark:text-slate-300 text-sm sm:text-base font-bold leading-relaxed space-y-2">
+            <p>1. {{ i18n.currentLang() === 'th' ? 'วางเครื่องมือไว้บนอก' : 'Place device on chest' }}</p>
+            <p>2. {{ i18n.currentLang() === 'th' ? 'วางคางบนแผ่นรอง' : 'Rest chin on pad' }}</p>
+            <p class="text-amber-600 dark:text-amber-400 font-extrabold">
+              {{ i18n.currentLang() === 'th' ? 'ก้มกดเบาๆ เพื่อเริ่มเกม' : 'Press gently to start' }}
+            </p>
+          </div>
+
+          <!-- Dismiss the instructions and start the countdown (does not leave the page) -->
+          <button (click)="dismissReady()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white text-sm font-bold rounded-lg transition-colors w-full mt-1">
+            {{ i18n.currentLang() === 'th' ? 'รับทราบ' : 'Got it' }}
+          </button>
+        </div>
       </div>
 
-      <!-- Main Game Area with Side HUDs -->
-      <div class="w-full flex-1 relative flex justify-between items-center z-20">
-        
-        <!-- Left HUD: Forces -->
-        <div class="flex flex-col gap-2 sm:gap-6 w-1/3 max-w-[140px] z-20">
-          <div class="text-right bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-2 sm:p-3 rounded-2xl border border-white/20 dark:border-white/5 w-full">
-             <div class="text-[9px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-0.5 sm:mb-1"><i class="fa-solid fa-bolt text-blue-400 mr-1"></i> Current</div>
-             <div class="text-2xl sm:text-4xl font-black text-blue-600 dark:text-blue-400 tabular-nums">{{ currentForce() | number:'1.0-1' }}<span class="text-xs sm:text-sm text-slate-400 font-bold ml-1">N</span></div>
+      <!-- Countdown State Overlay -->
+      <div *ngIf="gameFlowState() === 'countdown'" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in text-center">
+        <span class="text-white font-bold uppercase tracking-widest text-sm xs:text-base sm:text-lg mb-4 drop-shadow-md">
+          {{ i18n.currentLang() === 'th' ? 'ปล่อยมือ เตรียมตัว...' : 'Release and get ready...' }}
+        </span>
+        <!-- Massive number: pops in per digit, stays readable (no ping fade-out) -->
+        <div [@countdownPop]="countdownValue()" class="text-8xl xs:text-9xl font-black text-amber-400 tabular-nums select-none drop-shadow-lg" role="status" aria-live="assertive">
+          {{ countdownValue() }}
+        </div>
+      </div>
+
+      <!-- Disconnected State Overlay -->
+      <div *ngIf="gameFlowState() === 'disconnected'" class="absolute inset-0 bg-slate-950/65 z-40 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <div role="alert" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
+          <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <i class="fa-brands fa-bluetooth-b text-2xl text-red-500" aria-hidden="true"></i>
           </div>
-          
-          <div class="text-right bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-2 sm:p-3 rounded-2xl border border-white/20 dark:border-white/5 w-full">
-             <div class="text-[9px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-0.5 sm:mb-1"><i class="fa-solid fa-arrow-trend-up text-emerald-400 mr-1"></i> Peak</div>
-             <div class="text-lg sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 tabular-nums">{{ peakForce() | number:'1.0-1' }}<span class="text-[10px] sm:text-xs text-slate-400 font-bold ml-1">N</span></div>
-             <div class="text-[9px] sm:text-[10px] text-slate-400 font-bold mt-1 tabular-nums">Goal: {{ maxForceLimit | number:'1.0-0' }} N</div>
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+            {{ i18n.currentLang() === 'th' ? 'การเชื่อมต่อหลุด' : 'Connection Lost' }}
+          </h2>
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+            {{ i18n.currentLang() === 'th' ? 'กรุณาเชื่อมต่ออุปกรณ์ใหม่อีกครั้ง เพื่อฝึกต่อ' : 'Please reconnect the device to continue training.' }}
+          </p>
+          <button (click)="goToConnect()"
+            class="px-6 min-h-[52px] w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            <i class="fa-solid fa-link mr-2" aria-hidden="true"></i>{{ i18n.currentLang() === 'th' ? 'เชื่อมต่อใหม่' : 'Reconnect' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Exit Confirmation Overlay -->
+      <div *ngIf="showExitConfirm()" class="absolute inset-0 bg-slate-950/65 z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+            {{ i18n.currentLang() === 'th' ? 'ออกจากการฝึก?' : 'Leave training?' }}
+          </h2>
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+            {{ i18n.currentLang() === 'th'
+              ? (currentRepVal > 0
+                  ? 'ฝึกไปแล้ว ' + currentRepVal + ' ครั้ง ถ้าออกตอนนี้ความคืบหน้าจะไม่ถูกบันทึก'
+                  : 'ต้องการออกจากการฝึกใช่หรือไม่?')
+              : (currentRepVal > 0
+                  ? 'You completed ' + currentRepVal + ' reps. Leaving now will not save your progress.'
+                  : 'Are you sure you want to leave training?') }}
+          </p>
+          <button (click)="cancelExit()"
+            class="px-6 min-h-[52px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            {{ i18n.currentLang() === 'th' ? 'ฝึกต่อ' : 'Keep training' }}
+          </button>
+          <button (click)="confirmExit()"
+            class="px-6 min-h-[44px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-sm cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            {{ i18n.currentLang() === 'th' ? 'ออกจากการฝึก' : 'Leave' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Finish-Early Confirmation Overlay -->
+      <div *ngIf="showFinishConfirm()" class="absolute inset-0 bg-slate-950/65 z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
+        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+            {{ i18n.currentLang() === 'th' ? 'จบการฝึกตอนนี้?' : 'Finish now?' }}
+          </h2>
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+            {{ i18n.currentLang() === 'th'
+              ? 'ฝึกไปแล้ว ' + currentRepVal + ' จาก ' + targetReps + ' ครั้ง ระบบจะบันทึกผลเท่าที่ทำได้'
+              : 'You completed ' + currentRepVal + ' of ' + targetReps + ' reps. We will save your progress so far.' }}
+          </p>
+          <button (click)="cancelFinish()"
+            class="px-6 min-h-[52px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            {{ i18n.currentLang() === 'th' ? 'ฝึกต่อ' : 'Keep training' }}
+          </button>
+          <button (click)="confirmFinish()"
+            class="px-6 min-h-[44px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-sm cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            {{ i18n.currentLang() === 'th' ? 'จบและดูผล' : 'Finish and view results' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Integrated Top Header Bar -->
+      <div class="game-header w-full flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/10 relative z-10">
+        <div class="flex items-center space-x-3 min-w-0">
+          <button (click)="goBack()"
+            [attr.aria-label]="i18n.currentLang() === 'th' ? 'ออกจากการฝึก' : 'Leave training'"
+            class="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            <i class="fa-solid fa-arrow-left text-lg" aria-hidden="true"></i>
+          </button>
+          <div class="text-left min-w-0">
+            <!-- No nowrap: the title wraps to a second line on narrow widths
+                 instead of overflowing under the mute / finish buttons -->
+            <h3 class="font-black text-base xs:text-lg sm:text-xl text-slate-800 dark:text-white leading-tight text-balance">{{ i18n.t('game.activeSession') }}</h3>
+            <!-- Rep count lives only in the centered pill below to avoid two competing counters -->
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-tight font-semibold">
+              {{ i18n.t('game.targetReps') }} {{ targetReps }}
+            </p>
           </div>
         </div>
-
-        <!-- The Balloon Track (Absolutely Centered) -->
-        <div class="absolute left-1/2 -translate-x-1/2 w-20 sm:w-28 h-64 sm:h-72 bg-slate-100 dark:bg-slate-800/50 backdrop-blur-md rounded-full border border-slate-200 dark:border-white/10 overflow-hidden shadow-inner flex flex-col justify-end z-10 transition-colors duration-300">
+        <div class="flex items-center space-x-2 shrink-0">
+          <button 
+            (click)="toggleMute()" 
+            class="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 border bg-white dark:bg-slate-800"
+            [ngClass]="isMuted ? 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400' : 'border-amber-300 text-amber-700 dark:border-amber-500/30 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-500/5'"
+            [title]="isMuted ? (i18n.currentLang() === 'th' ? 'เปิดเสียงพากย์' : 'Unmute Voice') : (i18n.currentLang() === 'th' ? 'ปิดเสียงพากย์' : 'Mute Voice')"
+            [attr.aria-label]="isMuted ? (i18n.currentLang() === 'th' ? 'เปิดเสียงพากย์' : 'Unmute Voice') : (i18n.currentLang() === 'th' ? 'ปิดเสียงพากย์' : 'Mute Voice')"
+            [attr.aria-pressed]="isMuted">
+            <i class="fa-solid" [ngClass]="isMuted ? 'fa-volume-xmark' : 'fa-volume-high'"></i>
+          </button>
           
-          <!-- Target Zone Overlay -->
-          <div class="absolute w-full bg-emerald-100/50 dark:bg-emerald-500/20 border-y border-emerald-300 dark:border-emerald-400/50 transition-all shadow-[0_0_15px_rgba(16,185,129,0.1)] dark:shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-               [style.bottom.%]="targetMinPercent" 
-               [style.height.%]="targetMaxPercent - targetMinPercent">
+          <button 
+            (click)="finishSession()"
+            class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/25 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-black text-sm sm:text-base rounded-xl transition-all duration-300 flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-flag-checkered"></i>
+            <span>{{ i18n.t('game.finish') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="game-title-container flex flex-col items-center mb-6 relative z-10 mt-1 w-full text-center">
+         <div class="flex items-center space-x-3 mb-3">
+            <div class="w-10 h-10 xs:w-12 xs:h-12 rounded-lg bg-amber-50 dark:bg-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-transparent transition-colors duration-300">
+               <i class="fa-solid fa-parachute-box text-lg xs:text-xl"></i>
+            </div>
+            <h2 class="text-2xl xs:text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-wide transition-colors duration-300">{{ i18n.t('game.title') }}</h2>
+         </div>
+         
+         <!-- Reps Pill Badge (Centered) -->
+         <div class="flex items-center gap-2 px-4 py-1.5 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 rounded-full text-amber-800 dark:text-amber-400 font-extrabold text-sm sm:text-base shadow-sm">
+            <i class="fa-solid fa-dumbbell text-amber-600 dark:text-amber-500"></i>
+            <span>{{ i18n.t('game.hud.reps') }}:</span>
+            <span class="text-lg sm:text-xl font-black tabular-nums">{{ currentRepVal }}</span>
+            <span class="text-sm sm:text-base text-amber-700 dark:text-amber-500">/ {{ targetReps }}</span>
+         </div>
+      </div>
+
+      <!-- Main Game Area (Centered Single Column) -->
+      <div class="w-full flex-1 relative flex justify-center items-center z-20 min-h-0">
+
+        <!-- Live force readout: a large, glanceable % of the patient's calibrated
+             max. Turns amber in-zone to reinforce the balloon's own colour cue.
+             Anchored to the side so it never shifts the centred tube. -->
+        <div *ngIf="gameFlowState() === 'playing'"
+             class="force-readout absolute right-1 xs:right-3 top-1/2 -translate-y-1/2 flex flex-col items-center text-center select-none pointer-events-none transition-colors duration-200"
+             aria-hidden="true">
+          <span class="text-xs xs:text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.currentLang() === 'th' ? 'แรงกด' : 'Force' }}</span>
+          <span class="text-4xl xs:text-5xl font-black tabular-nums leading-none"
+                [ngClass]="inTargetZone ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'">
+            {{ forcePercent() }}<span class="text-lg xs:text-2xl align-top">%</span>
+          </span>
+        </div>
+
+        <!-- The Balloon Track (Centered & Dynamically Sized to fill parent container height) -->
+        <div class="relative w-24 xs:w-28 h-[85%] xs:h-[90%] bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner flex flex-col justify-end z-10 transition-colors duration-300">
+          
+          <!-- Target Zone Overlay (Elderly-Friendly High-Contrast Amber/Orange with indicators) -->
+          <div *ngIf="!isReleasing"
+               class="absolute w-full bg-amber-500/30 dark:bg-amber-500/40 border-y-4 border-amber-600 dark:border-amber-400 transition-all flex items-center justify-between px-1.5 xs:px-2"
+               [style.bottom.%]="targetZoneVisualBottom"
+               [style.height.%]="targetZoneVisualHeight">
+             <i class="fa-solid fa-chevron-right text-amber-700 dark:text-amber-300 text-xs"></i>
+             <span class="text-xs xs:text-sm font-black text-amber-950 dark:text-amber-100 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.target') }}</span>
+             <i class="fa-solid fa-chevron-left text-amber-700 dark:text-amber-300 text-xs"></i>
           </div>
 
-          <!-- The Floating Balloon -->
+          <!-- Release Green Zone Overlay (Visible only when releasing for relaxation below 4.0N) -->
+          <div *ngIf="isReleasing"
+               class="absolute w-full bg-emerald-500/20 dark:bg-emerald-500/35 border-t-4 border-emerald-500/80 transition-all flex flex-col items-center justify-center px-1"
+               style="bottom: 0;"
+               [style.height.%]="restZoneVisualPercent">
+             <i class="fa-solid fa-chevron-down text-emerald-600 dark:text-emerald-400 text-xs mb-0.5"></i>
+             <span class="text-xs xs:text-sm font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.rest') }}</span>
+          </div>
+
+          <!-- The Floating Balloon (Raised offset slightly to prevent bottom clipping) -->
           <div class="absolute w-full flex justify-center transition-all duration-75 ease-linear"
-               [style.bottom.%]="balloonPosition">
-            <div class="w-12 h-14 sm:w-16 sm:h-20 bg-gradient-to-tr from-rose-600 to-pink-500 rounded-[50%] shadow-[0_0_20px_rgba(244,63,94,0.5)] relative flex items-center justify-center
-                        before:content-[''] before:absolute before:-bottom-2 before:w-0 before:h-0 
-                        before:border-l-[6px] before:border-l-transparent before:border-r-[6px] before:border-r-transparent 
-                        before:border-b-[8px] before:border-b-rose-700
+               [style.bottom.%]="balloonPosition * 0.85 + 6">
+            <div class="w-14 h-18 xs:w-16 xs:h-20 bg-gradient-to-tr from-rose-600 to-pink-500 rounded-[50%] shadow-md relative flex items-center justify-center
+                        before:content-[''] before:absolute before:-bottom-2 before:w-0 before:h-0
+                        before:border-l-[5px] before:border-l-transparent before:border-r-[5px] before:border-r-transparent
+                        before:border-b-[7px] before:border-b-rose-700
                         transition-transform duration-300"
                   [ngClass]="{'scale-110 shadow-[0_0_30px_rgba(16,185,129,0.6)]': inTargetZone}">
-               <i class="fa-solid fa-face-smile text-white text-lg sm:text-2xl opacity-100 drop-shadow-md" *ngIf="inTargetZone"></i>
-               <i class="fa-solid fa-wind text-white text-lg sm:text-2xl opacity-80" *ngIf="!inTargetZone"></i>
+               <i class="fa-solid fa-face-smile text-white text-xl xs:text-2xl drop-shadow-md animate-pulse" *ngIf="inTargetZone"></i>
+               <i class="fa-solid fa-wind text-white text-xl xs:text-2xl opacity-80" *ngIf="!inTargetZone"></i>
             </div>
             <!-- String -->
-            <div class="absolute top-14 sm:top-20 w-px h-[400px] bg-gradient-to-b from-slate-300 dark:from-white/50 to-transparent"></div>
-          </div>
-        </div>
-
-        <!-- Right HUD: Reps -->
-        <div class="flex flex-col gap-2 sm:gap-6 w-1/3 max-w-[140px] z-20">
-          <div class="text-left bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm p-2 sm:p-3 rounded-2xl border border-white/20 dark:border-white/5 w-full h-full">
-             <div class="text-[9px] sm:text-xs text-slate-500 font-bold uppercase tracking-wider mb-0.5 sm:mb-1"><i class="fa-solid fa-dumbbell text-amber-400 mr-1"></i> Reps</div>
-             <div class="text-3xl sm:text-5xl font-black text-amber-500 dark:text-amber-400 tabular-nums">{{ currentRepVal }}</div>
-             <div class="text-xs sm:text-lg text-slate-400 font-bold mt-1 tabular-nums">/ {{ targetReps }}</div>
+            <div class="absolute top-18 xs:top-20 w-px h-[500px] bg-gradient-to-b from-slate-300 dark:from-white/50 to-transparent"></div>
           </div>
         </div>
 
       </div>
 
-      <!-- Hold Progress Indicator -->
-      <div class="mt-8 w-full max-w-sm relative z-10">
-        <div class="flex justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider transition-colors duration-300">
-          <span>Hold Focus Timer</span>
+      <!-- Hold/Release Progress Indicator -->
+      <div class="mt-8 w-full max-w-xs xs:max-w-sm relative z-10 progress-container">
+        <div class="flex justify-between text-sm xs:text-base font-bold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider transition-colors duration-300">
+          <span>{{ isReleasing ? i18n.t('game.hud.releaseStatus') : i18n.t('game.hud.holdTimer') }}</span>
           <span class="text-brand-accent">{{ holdProgress | number:'1.0-0' }}%</span>
         </div>
-        <div class="h-3 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200 dark:border-white/5 transition-colors duration-300">
-          <div class="h-full bg-gradient-to-r from-amber-400 to-amber-300 dark:from-amber-500 dark:to-amber-300 transition-all duration-100 relative"
+        <div class="h-3 xs:h-4 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200 dark:border-white/5 transition-colors duration-300" role="progressbar" [attr.aria-valuenow]="holdProgress" aria-valuemin="0" aria-valuemax="100">
+          <div class="h-full transition-all duration-100 relative"
+               [ngClass]="isReleasing ? 'bg-sky-500' : 'bg-amber-500'"
                [style.width.%]="holdProgress">
-               <div class="absolute top-0 right-0 bottom-0 left-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMSI+PC9yZWN0Pgo8cGF0aCBkPSJNMCA4TDggMFpNMCAwTDggOFoiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLW9wYWNpdHk9IjAuMSIgc3Ryb2tlLXdpZHRoPSIxIj48L3BhdGg+Cjwvc3ZnPg==')] opacity-30 animate-[slide_1s_linear_infinite]"></div>
           </div>
         </div>
       </div>
       
       <!-- Feedback Text -->
-      <div class="mt-4 text-center font-bold text-lg h-6 transition-colors duration-300 relative z-10"
-           [ngClass]="inTargetZone ? 'text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_4px_rgba(16,185,129,0.3)] dark:drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-slate-400'">
+      <div class="mt-4 text-center font-bold text-xl xs:text-2xl h-8 xs:h-10 transition-colors duration-300 relative z-10 feedback-container"
+           [ngClass]="isReleasing ? 'text-sky-600 dark:text-sky-400' : (inTargetZone ? 'text-amber-700 dark:text-amber-300' : 'text-slate-700 dark:text-slate-300')"
+           role="status" aria-live="polite">
         {{ feedbackMessage }}
       </div>
     </div>
-  `
+  `,
+  styles: [`
+    .game-card {
+      box-sizing: border-box;
+    }
+    
+    @media (max-height: 800px) {
+      .game-card {
+        padding: 0.75rem 1rem !important;
+        min-height: 0 !important;
+      }
+      .game-header {
+        padding-bottom: 0.5rem !important;
+        margin-bottom: 0.5rem !important;
+      }
+      .game-title-container {
+        margin-bottom: 0.5rem !important;
+        margin-top: 0 !important;
+      }
+      .game-title-container h2 {
+        font-size: 1.25rem !important;
+      }
+      .game-title-container .w-10 {
+        width: 1.75rem !important;
+        height: 1.75rem !important;
+      }
+      .game-title-container i {
+        font-size: 0.875rem !important;
+      }
+      .progress-container {
+        margin-top: 0.75rem !important;
+      }
+      .feedback-container {
+        margin-top: 0.25rem !important;
+        font-size: 1.125rem !important;
+        height: auto !important;
+      }
+    }
+
+    @media (max-height: 680px) {
+      .game-title-container {
+        display: none !important;
+      }
+      .progress-container {
+        margin-top: 0.5rem !important;
+      }
+      .feedback-container {
+        font-size: 1rem !important;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      :host ::ng-deep .animate-pulse { animation: none !important; }
+      :host ::ng-deep [class*="transition"] { transition-duration: 0.01ms !important; }
+      :host ::ng-deep .animate-\\[slide_1s_linear_infinite\\] { animation: none !important; }
+    }
+  `]
 })
 export class ZenBalloonComponent implements OnInit, OnDestroy {
+  public i18n = inject(I18nService);
+  public bleService = inject(BleService);
+  public gameFlowState = signal<'ready' | 'countdown' | 'playing' | 'disconnected'>('ready');
+  // Controls the "Get Ready" instruction overlay. Dismissed via "รับทราบ" so the
+  // user can see the game; the physical press still starts the countdown either way.
+  public showReadyInstructions = signal<boolean>(true);
+  public countdownValue = signal<number>(3);
+  public showExitConfirm = signal<boolean>(false);
+  public showFinishConfirm = signal<boolean>(false);
+  private countdownTimer: any;
+  private voiceTimeout: any;
+  private readyDismissTimer: any;
+  // Timestamp when force first crossed 2N while the ready overlay is up; the press
+  // must be sustained 0.2s to dismiss the overlay, filtering out sensor spikes.
+  private readyHoldStart: number | null = null;
+  private router = inject(Router);
+
+  public isMuted = false;
+  private lastVoicePlayTime = 0;
+  private activeAudio: HTMLAudioElement | null = null;
+  // Sustained-violation accumulator for the rest phase (see game loop)
+  private restViolationMs = 0;
+  // Angular animations run via WAAPI; the CSS reduced-motion rules can't stop them
+  public prefersReducedMotion = typeof matchMedia !== 'undefined'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // Driven strictly by the hardware BLE signal internally
   @Input({ required: true }) currentForce!: Signal<number>;
   @Input({ required: true }) peakForce!: Signal<number>;
@@ -125,20 +375,71 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   // Visual positions in percentages
   public targetMinPercent = 0;
   public targetMaxPercent = 0;
+  public releaseThresholdPercent = 0;
   public balloonPosition = 0;
 
   public inTargetZone = false;
+  public isReleasing = false;
+  private readonly releaseThreshold = 4.0; // 4.0 Newtons constant safe release threshold
+  private currentRestMs = 0; // Track rest duration in milliseconds
 
   public holdProgress = 0; // 0 to 100 scale for progress bar
   @Input() requiredHoldTimeMs = 2000; // Configurable hold time, defaults to 2.0s
   private currentHoldMs = 0;
 
-  public feedbackMessage = "Breathe and tuck to lift...";
+  public feedbackMessage = '';
   private gameloop: any;
 
-  // Visual maximum scale of the tube based on calibration
+  // Visual maximum scale of the tube, anchored to the *active* target zone.
+  //
+  // Anchoring to targetMax (not the raw calibrated max with a fixed 50N floor)
+  // keeps the target band sitting ~⅔ up the tube for every patient. A weakly
+  // calibrated user used to get a band compressed onto the floor, where the
+  // resting balloon's 22%-tall body already overlapped it — so they scored a
+  // hold without squeezing at all. Tying the scale to targetMax guarantees the
+  // balloon must always travel a real distance to reach the zone, while the
+  // /0.78 factor leaves headroom above the band for over-press ("too hard").
   private get maxScale() {
-    return Math.max(50, this.maxForceLimit * 1.3); // give 30% headroom above max force
+    return Math.max(this.targetMax / 0.78, 10);
+  }
+
+  // Force needed to deliberately kick off the countdown from the ready screen.
+  // Scaled to the patient's own calibration so a frail user (low max) isn't
+  // made to spend most of their strength just to *start*; floored at 3N so
+  // sensor noise / resting weight can't auto-start the session.
+  private get startThreshold(): number {
+    return Math.max(3, this.maxForceLimit * 0.25);
+  }
+
+  // Percentage display for elderly users (instead of Newton)
+  public forcePercent(): number {
+    if (this.maxForceLimit <= 0) return 0;
+    return Math.min(999, Math.round((this.currentForce() / this.maxForceLimit) * 100));
+  }
+
+  public peakPercent(): number {
+    if (this.maxForceLimit <= 0) return 0;
+    return Math.min(999, Math.round((this.peakForce() / this.maxForceLimit) * 100));
+  }
+
+  getTriggerProgressPercent(): number {
+    return Math.min(100, Math.round((this.currentForce() / this.startThreshold) * 100));
+  }
+
+  // The balloon is drawn at (pos * 0.85 + 6)% from the bottom, so every zone
+  // must use the same mapping — otherwise the visuals drift away from the
+  // in-zone logic as positions get higher.
+  public get targetZoneVisualBottom(): number {
+    return this.targetMinPercent * 0.85 + 6;
+  }
+
+  public get targetZoneVisualHeight(): number {
+    return (this.targetMaxPercent - this.targetMinPercent) * 0.85;
+  }
+
+  // Ensure rest zone has minimum visual height of 15% for readability
+  public get restZoneVisualPercent(): number {
+    return Math.max(15, this.releaseThresholdPercent * 0.85 + 6);
   }
 
   constructor(private ngZone: NgZone, private biofeedback: BiofeedbackService) {
@@ -156,10 +457,38 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
       // Update Target Zone visual percentages
       this.targetMinPercent = (this.targetMin / this.maxScale) * 100;
       this.targetMaxPercent = (this.targetMax / this.maxScale) * 100;
+      this.releaseThresholdPercent = (this.releaseThreshold / this.maxScale) * 100;
 
       // Logic check and transition biofeedback
       const wasInTarget = this.inTargetZone;
-      const isCurrentlyInTarget = force >= this.targetMin && force <= this.targetMax;
+      
+      // Guard: Do not trigger feedback or target zone evaluation if not actively playing
+      if (this.gameFlowState() !== 'playing') {
+        this.inTargetZone = false;
+        // While the ready overlay is up, a 2N press held 0.2s dismisses it and
+        // starts the countdown (same outcome as the button or the 5s auto-close).
+        if (this.gameFlowState() === 'ready') {
+          if (force >= 2.0) {
+            if (this.readyHoldStart === null) {
+              this.readyHoldStart = Date.now();
+            } else if (Date.now() - this.readyHoldStart >= 200) {
+              this.readyHoldStart = null;
+              this.ngZone.run(() => this.dismissReady());
+            }
+          } else {
+            this.readyHoldStart = null;
+          }
+        }
+        return;
+      }
+      
+      // Red Balloon Overlap Logic:
+      // Visual height of the balloon is roughly 22% of the track height.
+      // We check if the interval [pos, pos + 22] overlaps [targetMinPercent, targetMaxPercent]
+      const balloonHeightPercent = 22;
+      const isCurrentlyInTarget = !this.isReleasing && 
+                                  pos <= this.targetMaxPercent && 
+                                  (pos + balloonHeightPercent) >= this.targetMinPercent;
 
       if (isCurrentlyInTarget !== wasInTarget) {
         this.inTargetZone = isCurrentlyInTarget;
@@ -167,22 +496,139 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
           if (isCurrentlyInTarget) {
             this.biofeedback.playEnterZone();
             this.biofeedback.startVibrationLoop();
+            this.playVoice('cue_hold.mp3');
           } else {
+            // The hold vibration must stop on every zone exit — leaving it
+            // running tells the user's hand they're still doing fine
+            this.biofeedback.stopVibrationLoop();
             if (this.currentHoldMs > 50) {
               this.biofeedback.playExitZone();
-            } else {
-              this.biofeedback.stopVibrationLoop();
             }
           }
         });
       }
-    });
+    }, { allowSignalWrites: true });
+
+    // Freeze the session if the BLE device drops mid-game — otherwise the
+    // balloon silently sticks at the last force value and the user keeps
+    // pressing with no response. Resumes to the ready screen on reconnect.
+    effect(() => {
+      const connection = this.bleService.connectionState();
+      const flow = this.gameFlowState();
+      if (connection !== 'Connected' && (flow === 'playing' || flow === 'countdown')) {
+        this.ngZone.run(() => this.handleDisconnect());
+      } else if (connection === 'Connected' && flow === 'disconnected') {
+        this.ngZone.run(() => this.gameFlowState.set('ready'));
+      }
+    }, { allowSignalWrites: true });
+  }
+
+  private handleDisconnect() {
+    if (this.gameloop) {
+      clearInterval(this.gameloop);
+      this.gameloop = null;
+    }
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+    }
+    this.biofeedback.stopVibrationLoop();
+    this.inTargetZone = false;
+    this.gameFlowState.set('disconnected');
+    this.playVoice('cue_disconnected.mp3', true);
+  }
+
+  goToConnect() {
+    // Re-establishing the device after a mid-game drop also re-runs calibration,
+    // which re-verifies the sensor is working before training resumes.
+    this.router.navigate(['/calibrate']);
   }
 
   ngOnInit() {
+    this.isMuted = localStorage.getItem('zen_balloon_muted') === 'true';
     // Initialize visuals for rep 0
+    this.isReleasing = false;
+    this.feedbackMessage = this.i18n.t('game.feedback.squeeze');
     this.updateDifficulty();
-    this.startGameLoop();
+
+    // Play introductory welcome cue
+    this.setVoiceTimeout(() => {
+      this.playVoice('intro.mp3');
+    }, 600);
+
+    // The "Get Ready" modal is shown once after each calibration: the calibrate
+    // screen sets this flag, and we consume it here so a plain refresh (with no
+    // new calibration) skips the modal. Re-calibrating shows it again.
+    const showIntro = localStorage.getItem('ctar_show_game_intro') === '1';
+    if (showIntro) {
+      localStorage.removeItem('ctar_show_game_intro');
+    } else {
+      this.showReadyInstructions.set(false);
+    }
+
+    // Auto-start the countdown so the game never stalls: a longer beat when the
+    // modal is shown (time to read it), and a near-immediate 0.5s start on a
+    // plain refresh. The device press (2N/0.2s) starts the same countdown sooner.
+    this.readyDismissTimer = setTimeout(() => {
+      this.ngZone.run(() => this.dismissReady());
+    }, showIntro ? 5000 : 500);
+  }
+
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    localStorage.setItem('zen_balloon_muted', String(this.isMuted));
+    if (this.isMuted && this.activeAudio) {
+      this.activeAudio.pause();
+      this.activeAudio = null;
+      this.biofeedback.feedbackVolumeMultiplier = 1.0;
+    }
+  }
+
+  private setVoiceTimeout(callback: () => void, delay: number) {
+    if (this.voiceTimeout) {
+      clearTimeout(this.voiceTimeout);
+    }
+    this.voiceTimeout = setTimeout(callback, delay);
+  }
+
+  private playVoice(filename: string, bypassThrottle = false) {
+    if (this.isMuted) return;
+
+    if (!bypassThrottle && Date.now() - this.lastVoicePlayTime < 3000) {
+      return;
+    }
+
+    if (this.activeAudio) {
+      this.activeAudio.pause();
+      this.activeAudio = null;
+    }
+
+    const lang = this.i18n.currentLang();
+    const path = `/assets/audio/${lang}/${filename}`;
+    const audio = new Audio(path);
+    this.activeAudio = audio;
+
+    // Duck the tone feedback volume
+    this.biofeedback.feedbackVolumeMultiplier = 0.2;
+
+    const cleanup = () => {
+      if (this.activeAudio === audio) {
+        this.biofeedback.feedbackVolumeMultiplier = 1.0;
+        this.activeAudio = null;
+      }
+    };
+
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    audio.onpause = cleanup;
+
+    audio.play().then(() => {
+      // Consume the throttle window only when playback actually starts —
+      // a missing/failed file must not silence the next 3s of real cues
+      this.lastVoicePlayTime = Date.now();
+    }).catch(err => {
+      console.warn(`Voice playback failed for ${path}:`, err);
+      cleanup();
+    });
   }
 
   /**
@@ -192,34 +638,106 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   private startGameLoop() {
     this.ngZone.runOutsideAngular(() => {
       this.gameloop = setInterval(() => {
+        const force = this.currentForce();
 
-        if (this.inTargetZone) {
-          this.currentHoldMs += 50;
-
-          if (this.currentHoldMs >= this.requiredHoldTimeMs) {
+        if (this.isReleasing) {
+          // Release phase: Wait for force to drop below threshold (4.0 Newtons)
+          if (force < this.releaseThreshold) {
+            this.restViolationMs = 0;
+            const wasResting = this.currentRestMs > 0;
+            this.currentRestMs += 50;
+            const newProgress = (this.currentRestMs / 2000) * 100;
+            
             this.ngZone.run(() => {
-              this.repCompleted.emit();
-              this.triggerSuccessAnimation();
-              this.biofeedback.playSuccess();
-              // The updateDifficulty() will be called when currentRep input changes
+              this.holdProgress = newProgress;
+              this.updateFeedback();
+
+              if (!wasResting) {
+                this.playVoice('cue_resting.mp3');
+              }
+
+              if (this.currentRestMs >= 2000) {
+                this.isReleasing = false;
+                this.repCompleted.emit();
+                this.triggerSuccessAnimation();
+                this.biofeedback.playSuccess();
+                this.currentHoldMs = 0;
+                this.holdProgress = 0;
+                this.currentRestMs = 0;
+                this.updateFeedback();
+
+                // Play success rep voice cue — a once-per-rep reward that must
+                // bypass the 3s throttle (the rest phase is shorter than 3s)
+                this.playVoice('cue_rep_success.mp3', true);
+
+                // Play squeeze instruction cue after success chime has finished playing (3.5s delay)
+                this.setVoiceTimeout(() => {
+                  if (!this.isReleasing && !this.inTargetZone && this.currentRepVal < this.targetReps) {
+                    this.playVoice('cue_squeeze.mp3');
+                  }
+                }, 3500);
+              }
             });
-            this.currentHoldMs = 0; // Drop rep progress after win
+          } else {
+            // Squeezed during rest. Elderly users commonly tremor around the
+            // threshold, so a momentary spike only pauses the rest counter —
+            // progress resets only after a sustained (300ms) violation.
+            this.restViolationMs += 50;
+            if (this.restViolationMs >= 300 && (this.currentRestMs !== 0 || this.holdProgress !== 0)) {
+              this.ngZone.run(() => {
+                this.currentRestMs = 0;
+                this.holdProgress = 0;
+                this.updateFeedback();
+
+                // Warn about squeezing during rest
+                this.playVoice('cue_rest_warning.mp3');
+              });
+            }
           }
         } else {
-          // Normal penalty depletion if balloon exits target zone (less punishing than before)
-          this.currentHoldMs -= 50;
-          if (this.currentHoldMs < 0) this.currentHoldMs = 0;
-        }
+          // Squeeze & Hold phase
+          if (this.inTargetZone) {
+            this.currentHoldMs += 50;
 
-        // Calculate view progress
-        const newProgress = (this.currentHoldMs / this.requiredHoldTimeMs) * 100;
+            if (this.currentHoldMs >= this.requiredHoldTimeMs) {
+              this.ngZone.run(() => {
+                this.isReleasing = true;
+                this.inTargetZone = false;
+                this.biofeedback.playHoldComplete();
+                this.holdProgress = 0; // Starts at 0 for rest progress
+                this.currentRestMs = 0;
+                this.updateFeedback();
 
-        // Sync graphics only if distinct changes occurred
-        if (Math.abs(this.holdProgress - newProgress) > 1 || newProgress === 0) {
-          this.ngZone.run(() => {
-            this.holdProgress = newProgress;
-            this.updateFeedback();
-          });
+                // Prompt user to release force — a state-transition cue fired
+                // exactly 2s after cue_hold, so it must bypass the 3s throttle
+                this.playVoice('cue_release.mp3', true);
+              });
+            }
+          } else {
+            // Normal depletion if balloon exits target zone
+            this.currentHoldMs -= 50;
+            if (this.currentHoldMs < 0) this.currentHoldMs = 0;
+
+            // Warn if exceeding the target zone
+            if (force > this.targetMax) {
+              this.ngZone.run(() => {
+                this.playVoice('cue_too_hard.mp3');
+              });
+            }
+          }
+
+          if (!this.isReleasing) {
+            // Calculate view progress
+            const newProgress = (this.currentHoldMs / this.requiredHoldTimeMs) * 100;
+
+            // Sync graphics only if distinct changes occurred
+            if (Math.abs(this.holdProgress - newProgress) > 1 || newProgress === 0) {
+              this.ngZone.run(() => {
+                this.holdProgress = newProgress;
+                this.updateFeedback();
+              });
+            }
+          }
         }
       }, 50); // 20 frames per second check aligns gracefully with 20Hz hardware rate
     });
@@ -228,19 +746,15 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   private updateDifficulty() {
     // Hold time is kept at the configured settings value (no longer hardcoded)
 
-    // 2. Alternating Wave Pattern (High Intensity on odd reps, Low Intensity on even reps)
-    const repNum = this.currentRepVal + 1; // 1-indexed rep number
-    const isOdd = repNum % 2 !== 0;
+    // Randomize target zone position in the range 65% - 95% of PEAK
+    // Let's use a 15% width target zone.
+    // targetMin is randomized between 65% and 80% (so targetMax will be 80% to 95%)
+    const minPercent = 0.65;
+    const maxPercent = 0.80; // 0.95 - 0.15 width = 0.80
+    const randMultiplier = minPercent + Math.random() * (maxPercent - minPercent);
 
-    if (isOdd) {
-      // High Intensity: 65% - 85% of calibration limit
-      this.targetMin = this.maxForceLimit * 0.65;
-      this.targetMax = this.maxForceLimit * 0.85;
-    } else {
-      // Low Intensity: 20% - 40% of calibration limit
-      this.targetMin = this.maxForceLimit * 0.20;
-      this.targetMax = this.maxForceLimit * 0.40;
-    }
+    this.targetMin = this.maxForceLimit * randMultiplier;
+    this.targetMax = this.targetMin + (this.maxForceLimit * 0.15);
 
     // Ensure values don't go below minimum safe threshold (e.g. 5 Newtons)
     if (this.targetMin < 5) {
@@ -251,29 +765,138 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
     // Update visuals
     this.targetMinPercent = (this.targetMin / this.maxScale) * 100;
     this.targetMaxPercent = (this.targetMax / this.maxScale) * 100;
+    this.releaseThresholdPercent = (this.releaseThreshold / this.maxScale) * 100;
   }
 
   private updateFeedback() {
-    if (this.inTargetZone && this.holdProgress > 50) {
-      this.feedbackMessage = "Hold it right there...!";
+    if (this.isReleasing) {
+      const restTimeSec = Math.max(0, Math.ceil((2000 - this.currentRestMs) / 1000));
+      if (this.currentForce() >= this.releaseThreshold) {
+        this.feedbackMessage = this.i18n.t('game.feedback.releaseBelow');
+      } else {
+        this.feedbackMessage = this.i18n.t('game.feedback.keepRelaxed').replace('{0}', String(restTimeSec));
+      }
+    } else if (this.inTargetZone && this.holdProgress > 50) {
+      this.feedbackMessage = this.i18n.t('game.feedback.holdAlmost');
     } else if (this.inTargetZone) {
-      this.feedbackMessage = "Perfect! Keep steady.";
+      this.feedbackMessage = this.i18n.t('game.feedback.hold');
     } else if (this.currentForce() < this.targetMin) {
-      this.feedbackMessage = "Tuck harder to lift bubble...";
+      this.feedbackMessage = this.i18n.t('game.feedback.squeeze');
     } else {
-      this.feedbackMessage = "Too hard! Relax slightly...";
+      this.feedbackMessage = this.i18n.t('game.feedback.tooHard');
     }
   }
 
   private triggerSuccessAnimation() {
-    this.feedbackMessage = "Rep Completed! 🎉";
+    this.feedbackMessage = this.i18n.t('game.feedback.success');
     this.holdProgress = 100;
+  }
+
+  goBack() {
+    // Leaving abandons the current training session, so always confirm first.
+    this.showExitConfirm.set(true);
+  }
+
+  confirmExit() {
+    this.router.navigate(['/dashboard']);
+  }
+
+  cancelExit() {
+    this.showExitConfirm.set(false);
+  }
+
+  finishSession() {
+    // Mid-session early-finish discards nothing (it saves to /summary), but a
+    // stray tap before reaching the target still surprises the patient — so
+    // confirm whenever they finish short.
+    if (this.gameFlowState() === 'playing' && this.currentRepVal < this.targetReps) {
+      this.showFinishConfirm.set(true);
+      return;
+    }
+    this.router.navigate(['/summary']);
+  }
+
+  confirmFinish() {
+    this.showFinishConfirm.set(false);
+    this.router.navigate(['/summary']);
+  }
+
+  cancelFinish() {
+    this.showFinishConfirm.set(false);
+  }
+
+  /**
+   * Close the "Get Ready" instructions and immediately begin the countdown.
+   * All three dismiss routes funnel through here (device press 2N/0.2s, the
+   * "รับทราบ" button, and the 5s auto-close), so the game always starts the
+   * same way. The guard makes repeat calls a no-op once the countdown is live.
+   */
+  dismissReady() {
+    if (this.gameFlowState() !== 'ready') return;
+    this.showReadyInstructions.set(false);
+    this.startCountdown();
+  }
+
+  startCountdown() {
+    this.gameFlowState.set('countdown');
+    this.countdownValue.set(3);
+    // Audible tick per second so the start moment registers even with eyes
+    // on the chin movement; a higher tone marks the actual start
+    this.biofeedback.playTone(659.25, 'sine', 150, 0.1);
+
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+    }
+
+    this.countdownTimer = setInterval(() => {
+      this.ngZone.run(() => {
+        const currentVal = this.countdownValue();
+        if (currentVal <= 1) {
+          clearInterval(this.countdownTimer);
+          this.biofeedback.playTone(880, 'sine', 300, 0.12);
+          this.startGame();
+        } else {
+          this.countdownValue.set(currentVal - 1);
+          this.biofeedback.playTone(659.25, 'sine', 150, 0.1);
+        }
+      });
+    }, 1000);
+  }
+
+  startGame() {
+    this.gameFlowState.set('playing');
+    this.isReleasing = false;
+    this.holdProgress = 0;
+    this.currentHoldMs = 0;
+    
+    this.startGameLoop();
+    
+    // Play initial squeeze instruction cue after starting
+    this.setVoiceTimeout(() => {
+      if (this.gameFlowState() === 'playing' && !this.isReleasing && !this.inTargetZone) {
+        this.playVoice('cue_squeeze.mp3');
+      }
+    }, 1000);
   }
 
   ngOnDestroy() {
     if (this.gameloop) {
       clearInterval(this.gameloop);
     }
+    if (this.countdownTimer) {
+      clearInterval(this.countdownTimer);
+    }
+    if (this.voiceTimeout) {
+      clearTimeout(this.voiceTimeout);
+    }
+    if (this.readyDismissTimer) {
+      clearTimeout(this.readyDismissTimer);
+    }
     this.biofeedback.stopVibrationLoop();
+    if (this.activeAudio) {
+      this.activeAudio.pause();
+      this.activeAudio = null;
+      this.biofeedback.feedbackVolumeMultiplier = 1.0;
+    }
   }
 }

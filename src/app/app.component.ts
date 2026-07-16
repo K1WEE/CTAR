@@ -14,15 +14,23 @@ import { SupabaseService } from './services/supabase.service';
 export class AppComponent {
   constructor(private supabase: SupabaseService, private router: Router) {
     effect(() => {
+      // Only execute redirection once Supabase initialization has completed
+      if (!this.supabase.isInitialized()) return;
+
       const user = this.supabase.currentUser();
+      const currentUrl = this.router.url.split('?')[0].split('#')[0];
+      const isPublicPage = ['/login', '/register', '/forgot-password', '/reset-password'].includes(currentUrl);
+
       if (user) {
         // If logged in and on auth pages, redirect to dashboard
-        if (this.router.url === '/login' || this.router.url === '/register') {
+        if (currentUrl === '/login' || currentUrl === '/register' || currentUrl === '/forgot-password') {
            this.router.navigate(['/dashboard']);
         }
       } else {
         // Handled mostly by authGuard, but helpful for instant logout reaction
-        this.router.navigate(['/login']);
+        if (!isPublicPage) {
+          this.router.navigate(['/login']);
+        }
       }
     });
   }

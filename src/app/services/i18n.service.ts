@@ -12,6 +12,19 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'login.loading': { th: 'กำลังเข้าสู่ระบบ...', en: 'Signing in...' },
   'login.noAccount': { th: 'ยังไม่มีบัญชี?', en: "Don't have an account?" },
   'login.createOne': { th: 'สร้างบัญชีใหม่', en: 'Create one' },
+  'login.forgotPassword': { th: 'ลืมรหัสผ่าน?', en: 'Forgot Password?' },
+  'forgot.title': { th: 'ลืมรหัสผ่าน', en: 'Forgot Password' },
+  'forgot.subtitle': { th: 'กรุณากรอกอีเมลของคุณเพื่อรับลิงก์กู้คืนรหัสผ่าน', en: 'Enter your email address to receive a password reset link' },
+  'forgot.submit': { th: 'ส่งอีเมลกู้คืนรหัสผ่าน', en: 'Send Reset Link' },
+  'forgot.back': { th: 'กลับไปหน้าเข้าสู่ระบบ', en: 'Back to Login' },
+  'forgot.success': { th: 'ส่งลิงก์กู้คืนรหัสผ่านสำเร็จแล้ว! กรุณาตรวจสอบกล่องจดหมายของคุณ', en: 'Password reset link sent! Please check your email inbox.' },
+  'reset.title': { th: 'ตั้งรหัสผ่านใหม่', en: 'Reset Password' },
+  'reset.subtitle': { th: 'กรุณากรอกรหัสผ่านใหม่สำหรับบัญชีของคุณ', en: 'Please enter a new password for your account' },
+  'reset.newPassword': { th: 'รหัสผ่านใหม่', en: 'New Password' },
+  'reset.confirmPassword': { th: 'ยืนยันรหัสผ่านใหม่', en: 'Confirm New Password' },
+  'reset.submit': { th: 'บันทึกรหัสผ่านใหม่', en: 'Update Password' },
+  'reset.success': { th: 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว! กำลังนำคุณไปที่หน้าหลัก...', en: 'Password updated successfully! Redirecting...' },
+  'reset.error.match': { th: 'รหัสผ่านไม่ตรงกัน', en: 'Passwords do not match' },
 
   // ─── Register ───
   'register.title': { th: 'สร้างบัญชี', en: 'Create Account' },
@@ -38,16 +51,17 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   // ─── Calibrate ───
   'calibrate.title': { th: 'ปรับตั้งค่าเครื่อง', en: 'Calibration Phase' },
   'calibrate.intro': {
-    th: 'เราจะวัดแรงกดของคุณโดยให้คุณ<strong>บีบ 3 ครั้ง</strong><br><br>แต่ละครั้งจะใช้เวลา 5 วินาที ตามด้วยพัก 5 วินาที เราจะใช้ค่าเฉลี่ยเพื่อตั้งระดับความยากของเกม',
-    en: 'We will measure your strength by asking you to squeeze as hard as you can <strong>3 times</strong>.<br><br>Each squeeze will last 5 seconds, followed by a 5-second rest. We will average your results to set the game difficulty.'
+    th: 'เราจะวัดแรงกดของคุณโดยให้คุณ<strong>กดเต็มแรง 1 ครั้งและปล่อย</strong><br><br>เราจะนำค่าแรงกดสูงสุดนี้ไปใช้ตั้งค่าระดับความยากของเกมให้เหมาะสมกับคุณ',
+    en: 'We will measure your strength by asking you to <strong>press as hard as you can once and release</strong>.<br><br>We will use this peak force to set the game difficulty.'
   },
   'calibrate.start': { th: 'เริ่มปรับตั้งค่า', en: 'Start Calibration' },
   'calibrate.round': { th: 'รอบที่', en: 'Round' },
   'calibrate.of': { th: 'จาก', en: 'of' },
-  'calibrate.squeeze': { th: 'บีบให้แรงที่สุด!', en: 'SQUEEZE AS HARD AS YOU CAN!' },
+  'calibrate.squeeze': { th: 'กดให้แรงที่สุด!', en: 'PRESS AS HARD AS YOU CAN!' },
   'calibrate.rest': { th: 'พักผ่อน...', en: 'REST AND RELAX...' },
   'calibrate.complete': { th: 'ปรับตั้งค่าเสร็จสิ้น! 🎉', en: 'Calibration Complete! 🎉' },
-  'calibrate.avgForce': { th: 'แรงกดเฉลี่ยสูงสุด:', en: 'Average Max Force:' },
+  'calibrate.avgForce': { th: 'แรงกดสูงสุด:', en: 'Peak Force:' },
+  'calibrate.hint': { th: 'กดค้างไว้ให้เต็มแรง แล้วปล่อยเพื่อเสร็จสิ้น', en: 'Press and hold to peak, then release to finish' },
   'calibrate.adjusting': { th: 'กำลังปรับระดับเกม...', en: 'Adjusting game difficulty...' },
   'calibrate.current': { th: 'ปัจจุบัน:', en: 'Current:' },
 
@@ -55,6 +69,12 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'game.activeSession': { th: 'กำลังฝึก', en: 'Active Session' },
   'game.targetReps': { th: 'เป้าหมาย:', en: 'Target Reps:' },
   'game.finish': { th: 'จบการฝึก', en: 'Finish Session' },
+  'game.feedback.squeeze': { th: 'กดและค้างลูกโป่งให้อยู่ในโซนเป้าหมาย...', en: 'Press and hold the balloon in the target zone...' },
+  'game.feedback.hold': { th: 'นิ่งไว้! รักษาตำแหน่ง...', en: 'Perfect! Keep steady.' },
+  'game.feedback.holdAlmost': { th: 'ค้างไว้อีกนิดเดียว...!', en: 'Hold it right there...!' },
+  'game.feedback.tooHard': { th: 'กดแรงเกินไป! ผ่อนแรงลงเล็กน้อย...', en: 'Too hard! Relax slightly...' },
+  'game.feedback.release': { th: 'เยี่ยมยอด! ปล่อยแรงกดให้สุดเพื่อจบ Rep...', en: 'Great hold! Release all force to complete rep...' },
+  'game.feedback.success': { th: 'สำเร็จแล้ว! 🎉', en: 'Rep Completed! 🎉' },
 
   // ─── Summary ───
   'summary.title': { th: 'ฝึกเสร็จแล้ว!', en: 'Session Complete!' },
@@ -74,6 +94,12 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'error.saveFailed': { th: 'บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่', en: 'Failed to save session data to cloud.' },
   'error.noData': { th: 'ไม่พบข้อมูลการฝึกในรอบนี้', en: 'No data recorded in this session.' },
   'error.loginRequired': { th: 'กรุณาเข้าสู่ระบบก่อนบันทึก', en: 'You must be logged in to save.' },
+  'register.error.firstName': { th: 'กรุณากรอกชื่อจริง', en: 'First name is required' },
+  'register.error.lastName': { th: 'กรุณากรอกนามสกุล', en: 'Last name is required' },
+  'register.error.email': { th: 'กรุณากรอกอีเมล', en: 'Email is required' },
+  'register.error.passwordRequired': { th: 'กรุณากรอกรหัสผ่าน', en: 'Password is required' },
+  'register.error.passwordLength': { th: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร', en: 'Password must be at least 6 characters' },
+  'register.error.passwordComplexity': { th: 'รหัสผ่านต้องมีอักษรพิมพ์ใหญ่ พิมพ์เล็ก และตัวเลข (เช่น Ctar1234)', en: 'Password must contain uppercase, lowercase, and numbers (e.g. Ctar1234)' },
 
   // ─── Dashboard / Navigation ───
   'nav.clinicRecords': { th: 'บันทึกทางคลินิก', en: 'Clinical Records' },
@@ -115,7 +141,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'detail.compareDay': { th: 'เทียบครั้งก่อน', en: 'vs Prev Day' },
   'detail.compareWeek': { th: 'เทียบสัปดาห์ก่อน', en: 'vs Prev Week' },
   'detail.compareMonth': { th: 'เทียบเดือนก่อน', en: 'vs Prev Month' },
-  'detail.forceCurve': { th: 'กราฟแรงบีบ', en: 'Force Curve' },
+  'detail.forceCurve': { th: 'กราฟแรงกด', en: 'Force Curve' },
   'detail.noRawData': { th: 'ไม่พบข้อมูลกราฟดิบสำหรับการฝึกนี้', en: 'No raw data found for this session.' },
   'pagination.show': { th: 'แสดง', en: 'Show' },
   'pagination.entries': { th: 'รายการ', en: 'entries' },
@@ -133,6 +159,39 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'portal.startBtn': { th: 'เริ่มเลย', en: 'Start Now' },
   'portal.statsTitle': { th: 'สถิติล่าสุดของคุณ', en: 'Your Latest Stats' },
   'portal.noStats': { th: 'ยังไม่มีข้อมูลการฝึก', en: 'No session data yet' },
+
+  // ─── Onboarding / Chin Tuck Demo ───
+  'onboarding.step1': { th: 'วางเครื่องมือไว้บนอก', en: 'Place the device on your chest' },
+  'onboarding.step2': { th: 'วางคางลงบนแผ่นรองด้านบน', en: 'Rest your chin on the top pad' },
+  'onboarding.step3': { th: 'ก้มคางกดลงให้แรงที่สุด แล้วปล่อย', en: 'Press your chin down as hard as you can, then release' },
+
+  // ─── Calibrate (Updated) ───
+  'calibrate.intro.updated': {
+    th: 'วางเครื่องมือไว้บนอก แล้ววางคางลงบนแผ่นรองด้านบน<br><br>เมื่อพร้อม ให้<strong>ก้มคางกดลงให้แรงที่สุด แล้วปล่อย</strong>',
+    en: 'Place the device on your chest and rest your chin on the top pad.<br><br>When ready, <strong>press your chin down as hard as you can, then release</strong>.'
+  },
+  'calibrate.waiting.desc': {
+    th: 'ก้มคางกดลงบนแผ่นรอง...<br><br>ออกแรงกดให้<strong>มากกว่า 20 N</strong> เพื่อเริ่มจับเวลา',
+    en: 'Press your chin down on the top pad...<br><br>Exceed <strong>20 N</strong> to start the timer.'
+  },
+  'calibrate.getReady': { th: 'เตรียมตัว...', en: 'Get ready...' },
+  'calibrate.goToGame': { th: 'เริ่มเล่นเกม →', en: 'Start Game →' },
+
+  // ─── Connect (Updated) ───
+  'connect.continue': { th: 'เชื่อมต่อสำเร็จ! กดเพื่อเริ่มต้น →', en: 'Connected! Tap to continue →' },
+
+  // ─── Game (Zen Balloon) ───
+  'game.title': { th: 'ลูกโป่งเซน', en: 'The Zen Balloon' },
+  'game.hud.current': { th: 'ปัจจุบัน', en: 'Current' },
+  'game.hud.peak': { th: 'สูงสุด', en: 'Peak' },
+  'game.hud.goal': { th: 'เป้า:', en: 'Goal:' },
+  'game.hud.reps': { th: 'ครั้ง', en: 'Reps' },
+  'game.zone.target': { th: 'เป้าหมาย', en: 'Target' },
+  'game.zone.rest': { th: 'พักผ่อน', en: 'Rest Zone' },
+  'game.hud.holdTimer': { th: 'เวลาค้างแรง', en: 'Hold Timer' },
+  'game.hud.releaseStatus': { th: 'ปล่อยแรงกด', en: 'Release Force' },
+  'game.feedback.releaseBelow': { th: 'ปล่อยแรงกดเพื่อพักผ่อน...', en: 'Release force to rest...' },
+  'game.feedback.keepRelaxed': { th: 'เยี่ยม! ผ่อนคลายอีก {0} วินาที...', en: 'Great! Relax for {0}s...' },
 };
 
 @Injectable({

@@ -9,17 +9,27 @@ export class SupabaseService {
   public client: SupabaseClient;
   public currentUser = signal<User | null>(null);
   public userRole = signal<string>('user');
+  public isInitialized = signal<boolean>(false);
+
+  /**
+   * Resolves once the initial session has been restored from storage.
+   * Route guards must await this before reading currentUser(), otherwise a
+   * page refresh evaluates the guard before the async session lookup completes
+   * and the user is wrongly bounced to /login.
+   */
+  public sessionReady: Promise<void>;
 
   constructor() {
     this.client = createClient(environment.supabase.url, environment.supabase.key);
-    
+
     // Check initial session
-    this.client.auth.getSession().then(({ data }) => {
+    this.sessionReady = this.client.auth.getSession().then(({ data }) => {
       const user = data.session?.user || null;
       this.currentUser.set(user);
       if (user) {
         this.fetchAndSetRole(user.id);
       }
+      this.isInitialized.set(true);
     });
 
     // Listen to auth changes
@@ -51,6 +61,14 @@ export class SupabaseService {
         data: metadata
       }
     });
+  }
+
+  async sendPasswordResetEmail(email: string, redirectTo: string) {
+    return this.client.auth.resetPasswordForEmail(email, { redirectTo });
+  }
+
+  async updatePassword(password: string) {
+    return this.client.auth.updateUser({ password });
   }
 
   async getUserRole(userId: string): Promise<string> {

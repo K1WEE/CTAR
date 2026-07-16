@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { I18nService } from '../../services/i18n.service';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-forgot-password',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
@@ -21,13 +21,13 @@ import { I18nService } from '../../services/i18n.service';
         
         <div class="text-center mb-8 relative z-10">
           <div class="w-16 h-16 bg-slate-100 dark:bg-brand-dark rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-white/10 shadow-lg transition-colors duration-300">
-            <i class="fa-solid fa-staff-snake text-3xl text-brand-accent"></i>
+            <i class="fa-solid fa-key text-3xl text-brand-accent"></i>
           </div>
-          <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-2 transition-colors duration-300">{{ i18n.t('login.welcome') }}</h1>
-          <p class="text-slate-600 dark:text-slate-300 text-base">{{ i18n.t('login.subtitle') }}</p>
+          <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-2 transition-colors duration-300">{{ i18n.t('forgot.title') }}</h1>
+          <p class="text-slate-600 dark:text-slate-300 text-base">{{ i18n.t('forgot.subtitle') }}</p>
         </div>
 
-        <form (ngSubmit)="onSubmit()" class="space-y-5 relative z-10">
+        <form *ngIf="!success" (ngSubmit)="onSubmit()" class="space-y-5 relative z-10">
           <div>
             <label class="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1.5 transition-colors duration-300">{{ i18n.t('login.email') }}</label>
             <div class="relative">
@@ -44,31 +44,6 @@ import { I18nService } from '../../services/i18n.service';
             </div>
           </div>
 
-          <div>
-            <label class="block text-base font-medium text-slate-700 dark:text-slate-300 mb-1.5 transition-colors duration-300">{{ i18n.t('login.password') }}</label>
-            <div class="relative mb-2">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i class="fa-solid fa-lock text-slate-400 dark:text-slate-500"></i>
-              </div>
-              <input 
-                [type]="showPassword ? 'text' : 'password'" 
-                [(ngModel)]="password" 
-                name="password"
-                required
-                class="w-full pl-10 pr-10 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm dark:shadow-none"
-                placeholder="••••••••">
-              <button 
-                type="button"
-                (click)="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 outline-none border-none bg-transparent cursor-pointer z-10">
-                <i class="fa-solid" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
-              </button>
-            </div>
-            <div class="flex justify-end text-sm">
-              <a routerLink="/forgot-password" class="text-brand-accent hover:text-blue-700 dark:hover:text-white font-medium transition-colors">{{ i18n.t('login.forgotPassword') }}</a>
-            </div>
-          </div>
-
           <div *ngIf="error" class="text-rose-500 dark:text-rose-400 text-sm bg-rose-50 dark:bg-rose-500/10 p-3 rounded-lg border border-rose-200 dark:border-rose-500/20 flex items-center transition-colors duration-300">
             <i class="fa-solid fa-circle-exclamation mr-2"></i> {{ error }}
           </div>
@@ -78,42 +53,50 @@ import { I18nService } from '../../services/i18n.service';
             [disabled]="loading"
             class="w-full min-h-[56px] bg-brand-accent hover:bg-blue-700 text-white font-semibold text-lg rounded-xl transition-colors duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
             <i *ngIf="loading" class="fa-solid fa-spinner fa-spin mr-2"></i>
-            {{ loading ? i18n.t('login.loading') : i18n.t('login.submit') }}
+            {{ loading ? i18n.t('login.loading') : i18n.t('forgot.submit') }}
           </button>
         </form>
 
-        <div class="mt-6 text-center text-base text-slate-600 dark:text-slate-300 relative z-10 transition-colors duration-300">
-          {{ i18n.t('login.noAccount') }} 
-          <a routerLink="/register" class="text-brand-accent hover:text-blue-700 dark:hover:text-white font-medium transition-colors">{{ i18n.t('login.createOne') }}</a>
+        <div *ngIf="success" class="space-y-6 relative z-10 text-center">
+          <div class="bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex flex-col items-center">
+            <i class="fa-regular fa-circle-check text-4xl mb-2"></i>
+            <p class="font-medium text-base">{{ i18n.t('forgot.success') }}</p>
+          </div>
+        </div>
+
+        <div class="mt-6 text-center text-base relative z-10 transition-colors duration-300">
+          <a routerLink="/login" class="text-brand-accent hover:text-blue-700 dark:hover:text-white font-medium transition-colors">
+            <i class="fa-solid fa-arrow-left mr-1.5 text-sm"></i>{{ i18n.t('forgot.back') }}
+          </a>
         </div>
       </div>
     </div>
   `
 })
-export class LoginComponent {
+export class ForgotPasswordComponent {
   email = '';
-  password = '';
-  showPassword = false;
   loading = false;
+  success = false;
   error = '';
   public i18n = inject(I18nService);
 
-  constructor(private supabase: SupabaseService, private router: Router) {}
+  constructor(private supabase: SupabaseService) {}
 
   async onSubmit() {
-    if (!this.email || !this.password) return;
-    
+    if (!this.email) return;
+
     this.loading = true;
     this.error = '';
 
     try {
-      const { error } = await this.supabase.signIn(this.email, this.password);
+      const resetRedirectUrl = `${window.location.origin}/reset-password`;
+      const { error } = await this.supabase.sendPasswordResetEmail(this.email, resetRedirectUrl);
       if (error) throw error;
-      this.router.navigate(['/dashboard']);
+      this.success = true;
     } catch (e: any) {
       this.error = e.message;
     } finally {
-      this.loading = false; 
+      this.loading = false;
     }
   }
 }
