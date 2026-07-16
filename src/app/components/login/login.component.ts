@@ -55,12 +55,18 @@ import { I18nService } from '../../services/i18n.service';
                 <i class="fa-solid fa-lock text-slate-400 dark:text-slate-500"></i>
               </div>
               <input 
-                type="password" 
+                [type]="showPassword ? 'text' : 'password'" 
                 [(ngModel)]="password" 
                 name="password"
                 required
-                class="w-full pl-10 pr-4 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm dark:shadow-none"
+                class="w-full pl-10 pr-10 py-4 text-base bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none shadow-sm dark:shadow-none"
                 placeholder="••••••••">
+              <button 
+                type="button"
+                (click)="showPassword = !showPassword"
+                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-450 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 outline-none border-none bg-transparent cursor-pointer">
+                <i class="fa-solid" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+              </button>
             </div>
           </div>
 
@@ -88,6 +94,7 @@ import { I18nService } from '../../services/i18n.service';
 export class LoginComponent {
   email = '';
   password = '';
+  showPassword = false;
   loading = false;
   error = '';
   public i18n = inject(I18nService);
