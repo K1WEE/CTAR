@@ -109,9 +109,9 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
                 {{ i18n.currentLang() === 'th' ? 'แรงกดขณะนี้' : 'Current Force' }}
               </p>
               
-              <!-- Massive live force value for elderly -->
-              <div class="text-8xl sm:text-9xl font-black text-rose-600 dark:text-rose-400 tabular-nums tracking-tight mb-3">
-                {{ ctar.currentForce() | number:'1.0-1' }}<span class="text-3xl sm:text-4xl font-bold ml-1">N</span>
+              <!-- Live force value -->
+              <div class="text-6xl sm:text-7xl font-black text-rose-600 dark:text-rose-400 tabular-nums tracking-tight mb-3">
+                {{ ctar.currentForce() | number:'1.0-1' }}<span class="text-xl sm:text-2xl font-bold ml-1">N</span>
               </div>
               
               <!-- Timer Badge -->
@@ -129,9 +129,9 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
               {{ i18n.currentLang() === 'th' ? 'แรงกดสูงสุดที่ทดสอบได้' : 'Peak Force Measured' }}
             </div>
             
-            <!-- BIG Result value -->
-            <div class="text-8xl sm:text-9xl font-black text-emerald-500 dark:text-emerald-400 tabular-nums tracking-tight mb-2">
-              {{ averagePeak | number:'1.0-1' }}<span class="text-3xl sm:text-4xl font-bold ml-1">N</span>
+            <!-- Result value -->
+            <div class="text-6xl sm:text-7xl font-black text-emerald-500 dark:text-emerald-400 tabular-nums tracking-tight mb-2">
+              {{ averagePeak | number:'1.0-1' }}<span class="text-xl sm:text-2xl font-bold ml-1">N</span>
             </div>
 
             <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 max-w-sm mx-auto text-emerald-700 dark:text-emerald-400 text-base font-extrabold flex items-center justify-center gap-2">

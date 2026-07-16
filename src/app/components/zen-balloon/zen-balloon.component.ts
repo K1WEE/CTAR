@@ -27,23 +27,23 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
       <!-- Ready State Overlay (Transparent backdrop, showing game behind it) -->
       <div *ngIf="gameFlowState() === 'ready' && showReadyInstructions()" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
         <!-- Center translucent instruction card -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[360px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
+        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
           <app-chin-tuck-demo size="sm" [showLabel]="false" class="mb-2"></app-chin-tuck-demo>
 
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
             {{ i18n.currentLang() === 'th' ? 'เตรียมตัวเริ่มเกม' : 'Get Ready' }}
           </h2>
 
-          <div class="text-slate-700 dark:text-slate-300 text-base sm:text-lg font-bold leading-relaxed space-y-2.5">
+          <div class="text-slate-700 dark:text-slate-300 text-sm sm:text-base font-bold leading-relaxed space-y-2">
             <p>1. {{ i18n.currentLang() === 'th' ? 'วางเครื่องมือไว้บนอก' : 'Place device on chest' }}</p>
             <p>2. {{ i18n.currentLang() === 'th' ? 'วางคางบนแผ่นรอง' : 'Rest chin on pad' }}</p>
-            <p class="text-amber-600 dark:text-amber-400 font-extrabold text-lg sm:text-xl">
+            <p class="text-amber-600 dark:text-amber-400 font-extrabold">
               {{ i18n.currentLang() === 'th' ? 'ก้มกดเบาๆ เพื่อเริ่มเกม' : 'Press gently to start' }}
             </p>
           </div>
 
           <!-- Dismiss the instructions and start the countdown (does not leave the page) -->
-          <button (click)="dismissReady()" class="px-5 py-3 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white text-base font-black rounded-xl transition-colors w-full mt-1.5 shadow-sm">
+          <button (click)="dismissReady()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white text-sm font-bold rounded-lg transition-colors w-full mt-1">
             {{ i18n.currentLang() === 'th' ? 'รับทราบ' : 'Got it' }}
           </button>
         </div>
@@ -51,29 +51,29 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
       <!-- Countdown State Overlay -->
       <div *ngIf="gameFlowState() === 'countdown'" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in text-center">
-        <span class="text-white font-extrabold uppercase tracking-widest text-base xs:text-lg sm:text-xl mb-5 drop-shadow-md">
+        <span class="text-white font-bold uppercase tracking-widest text-sm xs:text-base sm:text-lg mb-4 drop-shadow-md">
           {{ i18n.currentLang() === 'th' ? 'ปล่อยมือ เตรียมตัว...' : 'Release and get ready...' }}
         </span>
         <!-- Massive number: pops in per digit, stays readable (no ping fade-out) -->
-        <div [@countdownPop]="countdownValue()" class="text-9xl xs:text-[10rem] font-black text-amber-400 tabular-nums select-none drop-shadow-lg" role="status" aria-live="assertive">
+        <div [@countdownPop]="countdownValue()" class="text-8xl xs:text-9xl font-black text-amber-400 tabular-nums select-none drop-shadow-lg" role="status" aria-live="assertive">
           {{ countdownValue() }}
         </div>
       </div>
 
       <!-- Disconnected State Overlay -->
       <div *ngIf="gameFlowState() === 'disconnected'" class="absolute inset-0 bg-slate-950/65 z-40 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
-        <div role="alert" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[360px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
-          <div class="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
-            <i class="fa-brands fa-bluetooth-b text-3xl text-red-500" aria-hidden="true"></i>
+        <div role="alert" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
+          <div class="w-14 h-14 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+            <i class="fa-brands fa-bluetooth-b text-2xl text-red-500" aria-hidden="true"></i>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
             {{ i18n.currentLang() === 'th' ? 'การเชื่อมต่อหลุด' : 'Connection Lost' }}
           </h2>
-          <p class="text-base sm:text-lg font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
             {{ i18n.currentLang() === 'th' ? 'กรุณาเชื่อมต่ออุปกรณ์ใหม่อีกครั้ง เพื่อฝึกต่อ' : 'Please reconnect the device to continue training.' }}
           </p>
           <button (click)="goToConnect()"
-            class="px-6 min-h-[58px] w-full bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-md transition-all duration-300 text-lg cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            class="px-6 min-h-[52px] w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             <i class="fa-solid fa-link mr-2" aria-hidden="true"></i>{{ i18n.currentLang() === 'th' ? 'เชื่อมต่อใหม่' : 'Reconnect' }}
           </button>
         </div>
@@ -81,11 +81,11 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
       <!-- Exit Confirmation Overlay -->
       <div *ngIf="showExitConfirm()" class="absolute inset-0 bg-slate-950/65 z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
-        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[360px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
             {{ i18n.currentLang() === 'th' ? 'ออกจากการฝึก?' : 'Leave training?' }}
           </h2>
-          <p class="text-base sm:text-lg font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
             {{ i18n.currentLang() === 'th'
               ? (currentRepVal > 0
                   ? 'ฝึกไปแล้ว ' + currentRepVal + ' ครั้ง ถ้าออกตอนนี้ความคืบหน้าจะไม่ถูกบันทึก'
@@ -95,11 +95,11 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
                   : 'Are you sure you want to leave training?') }}
           </p>
           <button (click)="cancelExit()"
-            class="px-6 min-h-[58px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-md transition-all duration-300 text-lg cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            class="px-6 min-h-[52px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             {{ i18n.currentLang() === 'th' ? 'ฝึกต่อ' : 'Keep training' }}
           </button>
           <button (click)="confirmExit()"
-            class="px-6 min-h-[48px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-base cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            class="px-6 min-h-[44px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-sm cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             {{ i18n.currentLang() === 'th' ? 'ออกจากการฝึก' : 'Leave' }}
           </button>
         </div>
@@ -107,21 +107,21 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
       <!-- Finish-Early Confirmation Overlay -->
       <div *ngIf="showFinishConfirm()" class="absolute inset-0 bg-slate-950/65 z-40 flex items-center justify-center p-6 rounded-3xl animate-fade-in">
-        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[360px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+        <div role="alertdialog" aria-modal="true" class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-3 animate-scale-up">
+          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
             {{ i18n.currentLang() === 'th' ? 'จบการฝึกตอนนี้?' : 'Finish now?' }}
           </h2>
-          <p class="text-base sm:text-lg font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+          <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
             {{ i18n.currentLang() === 'th'
               ? 'ฝึกไปแล้ว ' + currentRepVal + ' จาก ' + targetReps + ' ครั้ง ระบบจะบันทึกผลเท่าที่ทำได้'
               : 'You completed ' + currentRepVal + ' of ' + targetReps + ' reps. We will save your progress so far.' }}
           </p>
           <button (click)="cancelFinish()"
-            class="px-6 min-h-[58px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl shadow-md transition-all duration-300 text-lg cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            class="px-6 min-h-[52px] w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 text-base cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             {{ i18n.currentLang() === 'th' ? 'ฝึกต่อ' : 'Keep training' }}
           </button>
           <button (click)="confirmFinish()"
-            class="px-6 min-h-[48px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-base cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            class="px-6 min-h-[44px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 text-sm cursor-pointer border border-slate-200 dark:border-slate-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             {{ i18n.currentLang() === 'th' ? 'จบและดูผล' : 'Finish and view results' }}
           </button>
         </div>
@@ -132,34 +132,34 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
         <div class="flex items-center space-x-3 min-w-0">
           <button (click)="goBack()"
             [attr.aria-label]="i18n.currentLang() === 'th' ? 'ออกจากการฝึก' : 'Leave training'"
-            class="w-14 h-14 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
-            <i class="fa-solid fa-arrow-left text-xl" aria-hidden="true"></i>
+            class="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            <i class="fa-solid fa-arrow-left text-lg" aria-hidden="true"></i>
           </button>
           <div class="text-left min-w-0">
             <!-- No nowrap: the title wraps to a second line on narrow widths
                  instead of overflowing under the mute / finish buttons -->
-            <h3 class="font-black text-lg xs:text-xl sm:text-2xl text-slate-800 dark:text-white leading-tight text-balance">{{ i18n.t('game.activeSession') }}</h3>
+            <h3 class="font-black text-base xs:text-lg sm:text-xl text-slate-800 dark:text-white leading-tight text-balance">{{ i18n.t('game.activeSession') }}</h3>
             <!-- Rep count lives only in the centered pill below to avoid two competing counters -->
-            <p class="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-tight font-extrabold">
+            <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-tight font-semibold">
               {{ i18n.t('game.targetReps') }} {{ targetReps }}
             </p>
           </div>
         </div>
-        <div class="flex items-center space-x-2.5 shrink-0">
+        <div class="flex items-center space-x-2 shrink-0">
           <button 
             (click)="toggleMute()" 
-            class="w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 border bg-white dark:bg-slate-800 text-lg"
+            class="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 border bg-white dark:bg-slate-800"
             [ngClass]="isMuted ? 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-400' : 'border-amber-300 text-amber-700 dark:border-amber-500/30 dark:text-amber-400 bg-amber-50/50 dark:bg-amber-500/5'"
             [title]="isMuted ? (i18n.currentLang() === 'th' ? 'เปิดเสียงพากย์' : 'Unmute Voice') : (i18n.currentLang() === 'th' ? 'ปิดเสียงพากย์' : 'Mute Voice')"
             [attr.aria-label]="isMuted ? (i18n.currentLang() === 'th' ? 'เปิดเสียงพากย์' : 'Unmute Voice') : (i18n.currentLang() === 'th' ? 'ปิดเสียงพากย์' : 'Mute Voice')"
             [attr.aria-pressed]="isMuted">
-            <i class="fa-solid" [ngClass]="isMuted ? 'fa-volume-xmark text-xl' : 'fa-volume-high text-xl'"></i>
+            <i class="fa-solid" [ngClass]="isMuted ? 'fa-volume-xmark' : 'fa-volume-high'"></i>
           </button>
           
           <button 
             (click)="finishSession()"
-            class="px-6 py-3.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/25 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-black text-base sm:text-lg rounded-2xl transition-all duration-300 flex items-center space-x-2 shadow-sm">
-            <i class="fa-solid fa-flag-checkered text-lg"></i>
+            class="px-5 py-2.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/25 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 font-black text-sm sm:text-base rounded-xl transition-all duration-300 flex items-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-flag-checkered"></i>
             <span>{{ i18n.t('game.finish') }}</span>
           </button>
         </div>
@@ -167,18 +167,18 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
       <div class="game-title-container flex flex-col items-center mb-6 relative z-10 mt-1 w-full text-center">
          <div class="flex items-center space-x-3 mb-3">
-            <div class="w-12 h-12 xs:w-14 xs:h-14 rounded-xl bg-amber-50 dark:bg-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-transparent transition-colors duration-300">
-               <i class="fa-solid fa-parachute-box text-xl xs:text-2xl"></i>
+            <div class="w-10 h-10 xs:w-12 xs:h-12 rounded-lg bg-amber-50 dark:bg-amber-500/20 flex items-center justify-center text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-transparent transition-colors duration-300">
+               <i class="fa-solid fa-parachute-box text-lg xs:text-xl"></i>
             </div>
-            <h2 class="text-3xl xs:text-4xl sm:text-5xl font-black text-slate-900 dark:text-white tracking-wide transition-colors duration-300">{{ i18n.t('game.title') }}</h2>
+            <h2 class="text-2xl xs:text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-wide transition-colors duration-300">{{ i18n.t('game.title') }}</h2>
          </div>
          
          <!-- Reps Pill Badge (Centered) -->
-         <div class="flex items-center gap-2.5 px-5 py-2 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 rounded-full text-amber-800 dark:text-amber-400 font-extrabold text-base sm:text-lg shadow-sm">
-            <i class="fa-solid fa-dumbbell text-amber-600 dark:text-amber-500 text-lg"></i>
+         <div class="flex items-center gap-2 px-4 py-1.5 bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 rounded-full text-amber-800 dark:text-amber-400 font-extrabold text-sm sm:text-base shadow-sm">
+            <i class="fa-solid fa-dumbbell text-amber-600 dark:text-amber-500"></i>
             <span>{{ i18n.t('game.hud.reps') }}:</span>
-            <span class="text-xl sm:text-2xl font-black tabular-nums">{{ currentRepVal }}</span>
-            <span class="text-base sm:text-lg text-amber-700 dark:text-amber-500">/ {{ targetReps }}</span>
+            <span class="text-lg sm:text-xl font-black tabular-nums">{{ currentRepVal }}</span>
+            <span class="text-sm sm:text-base text-amber-700 dark:text-amber-500">/ {{ targetReps }}</span>
          </div>
       </div>
 
@@ -191,24 +191,24 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
         <div *ngIf="gameFlowState() === 'playing'"
              class="force-readout absolute right-1 xs:right-3 top-1/2 -translate-y-1/2 flex flex-col items-center text-center select-none pointer-events-none transition-colors duration-200"
              aria-hidden="true">
-          <span class="text-sm xs:text-base font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.currentLang() === 'th' ? 'แรงกด' : 'Force' }}</span>
-          <span class="text-5xl xs:text-6xl font-black tabular-nums leading-none"
+          <span class="text-xs xs:text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{{ i18n.currentLang() === 'th' ? 'แรงกด' : 'Force' }}</span>
+          <span class="text-4xl xs:text-5xl font-black tabular-nums leading-none"
                 [ngClass]="inTargetZone ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'">
-            {{ forcePercent() }}<span class="text-xl xs:text-3xl align-top">%</span>
+            {{ forcePercent() }}<span class="text-lg xs:text-2xl align-top">%</span>
           </span>
         </div>
 
         <!-- The Balloon Track (Centered & Dynamically Sized to fill parent container height) -->
-        <div class="relative w-28 xs:w-32 h-[85%] xs:h-[90%] bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner flex flex-col justify-end z-10 transition-colors duration-300">
+        <div class="relative w-24 xs:w-28 h-[85%] xs:h-[90%] bg-slate-100 dark:bg-slate-800 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner flex flex-col justify-end z-10 transition-colors duration-300">
           
           <!-- Target Zone Overlay (Elderly-Friendly High-Contrast Amber/Orange with indicators) -->
           <div *ngIf="!isReleasing"
                class="absolute w-full bg-amber-500/30 dark:bg-amber-500/40 border-y-4 border-amber-600 dark:border-amber-400 transition-all flex items-center justify-between px-1.5 xs:px-2"
                [style.bottom.%]="targetZoneVisualBottom"
                [style.height.%]="targetZoneVisualHeight">
-             <i class="fa-solid fa-chevron-right text-amber-700 dark:text-amber-300 text-sm"></i>
-             <span class="text-sm xs:text-base font-black text-amber-950 dark:text-amber-100 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.target') }}</span>
-             <i class="fa-solid fa-chevron-left text-amber-700 dark:text-amber-300 text-sm"></i>
+             <i class="fa-solid fa-chevron-right text-amber-700 dark:text-amber-300 text-xs"></i>
+             <span class="text-xs xs:text-sm font-black text-amber-950 dark:text-amber-100 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.target') }}</span>
+             <i class="fa-solid fa-chevron-left text-amber-700 dark:text-amber-300 text-xs"></i>
           </div>
 
           <!-- Release Green Zone Overlay (Visible only when releasing for relaxation below 4.0N) -->
@@ -216,24 +216,24 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
                class="absolute w-full bg-emerald-500/20 dark:bg-emerald-500/35 border-t-4 border-emerald-500/80 transition-all flex flex-col items-center justify-center px-1"
                style="bottom: 0;"
                [style.height.%]="restZoneVisualPercent">
-             <i class="fa-solid fa-chevron-down text-emerald-600 dark:text-emerald-400 text-sm mb-0.5"></i>
-             <span class="text-sm xs:text-base font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.rest') }}</span>
+             <i class="fa-solid fa-chevron-down text-emerald-600 dark:text-emerald-400 text-xs mb-0.5"></i>
+             <span class="text-xs xs:text-sm font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-tight whitespace-nowrap pointer-events-none select-none">{{ i18n.t('game.zone.rest') }}</span>
           </div>
 
           <!-- The Floating Balloon (Raised offset slightly to prevent bottom clipping) -->
           <div class="absolute w-full flex justify-center transition-all duration-75 ease-linear"
                [style.bottom.%]="balloonPosition * 0.85 + 6">
-            <div class="w-16 h-20 xs:w-18 xs:h-22 bg-gradient-to-tr from-rose-600 to-pink-500 rounded-[50%] shadow-md relative flex items-center justify-center
+            <div class="w-14 h-18 xs:w-16 xs:h-20 bg-gradient-to-tr from-rose-600 to-pink-500 rounded-[50%] shadow-md relative flex items-center justify-center
                         before:content-[''] before:absolute before:-bottom-2 before:w-0 before:h-0
                         before:border-l-[5px] before:border-l-transparent before:border-r-[5px] before:border-r-transparent
                         before:border-b-[7px] before:border-b-rose-700
                         transition-transform duration-300"
                   [ngClass]="{'scale-110 shadow-[0_0_30px_rgba(16,185,129,0.6)]': inTargetZone}">
-               <i class="fa-solid fa-face-smile text-white text-2xl xs:text-3xl drop-shadow-md animate-pulse" *ngIf="inTargetZone"></i>
-               <i class="fa-solid fa-wind text-white text-2xl xs:text-3xl opacity-80" *ngIf="!inTargetZone"></i>
+               <i class="fa-solid fa-face-smile text-white text-xl xs:text-2xl drop-shadow-md animate-pulse" *ngIf="inTargetZone"></i>
+               <i class="fa-solid fa-wind text-white text-xl xs:text-2xl opacity-80" *ngIf="!inTargetZone"></i>
             </div>
             <!-- String -->
-            <div class="absolute top-20 xs:top-22 w-px h-[500px] bg-gradient-to-b from-slate-300 dark:from-white/50 to-transparent"></div>
+            <div class="absolute top-18 xs:top-20 w-px h-[500px] bg-gradient-to-b from-slate-300 dark:from-white/50 to-transparent"></div>
           </div>
         </div>
 
@@ -241,11 +241,11 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
       <!-- Hold/Release Progress Indicator -->
       <div class="mt-8 w-full max-w-xs xs:max-w-sm relative z-10 progress-container">
-        <div class="flex justify-between text-base xs:text-lg font-extrabold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider transition-colors duration-300">
+        <div class="flex justify-between text-sm xs:text-base font-bold text-slate-600 dark:text-slate-300 mb-2 uppercase tracking-wider transition-colors duration-300">
           <span>{{ isReleasing ? i18n.t('game.hud.releaseStatus') : i18n.t('game.hud.holdTimer') }}</span>
-          <span class="text-brand-accent font-black">{{ holdProgress | number:'1.0-0' }}%</span>
+          <span class="text-brand-accent">{{ holdProgress | number:'1.0-0' }}%</span>
         </div>
-        <div class="h-4 xs:h-5 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200 dark:border-white/5 transition-colors duration-300" role="progressbar" [attr.aria-valuenow]="holdProgress" aria-valuemin="0" aria-valuemax="100">
+        <div class="h-3 xs:h-4 bg-slate-100 dark:bg-slate-800/50 rounded-full overflow-hidden shadow-inner border border-slate-200 dark:border-white/5 transition-colors duration-300" role="progressbar" [attr.aria-valuenow]="holdProgress" aria-valuemin="0" aria-valuemax="100">
           <div class="h-full transition-all duration-100 relative"
                [ngClass]="isReleasing ? 'bg-sky-500' : 'bg-amber-500'"
                [style.width.%]="holdProgress">
@@ -254,7 +254,7 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
       </div>
       
       <!-- Feedback Text -->
-      <div class="mt-4 text-center font-black text-2xl xs:text-3xl h-10 xs:h-12 transition-colors duration-300 relative z-10 feedback-container"
+      <div class="mt-4 text-center font-bold text-xl xs:text-2xl h-8 xs:h-10 transition-colors duration-300 relative z-10 feedback-container"
            [ngClass]="isReleasing ? 'text-sky-600 dark:text-sky-400' : (inTargetZone ? 'text-amber-700 dark:text-amber-300' : 'text-slate-700 dark:text-slate-300')"
            role="status" aria-live="polite">
         {{ feedbackMessage }}
