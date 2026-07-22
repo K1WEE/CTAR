@@ -8,6 +8,7 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 import { BleService } from '../../services/ble.service';
 import { SupabaseService } from '../../services/supabase.service';
 import { BiofeedbackService } from '../../services/biofeedback.service';
+import { calibrationStepForState } from './calibrate-flow';
 
 @Component({
   selector: 'app-calibrate',
@@ -53,6 +54,20 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
           </div>
           <div class="w-10 h-10"></div>
         </div>
+
+        <nav aria-label="Calibration progress" class="mb-3 w-full">
+          <ol class="grid grid-cols-3 gap-2 text-caption font-extrabold text-center">
+            <li *ngFor="let step of [1, 2, 3]"
+                class="rounded-xl border px-2 py-2 transition-colors"
+                [ngClass]="step <= currentStep
+                  ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/10 dark:text-blue-300'
+                  : 'border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400'"
+                [attr.aria-current]="step === currentStep ? 'step' : null">
+              <span class="block text-label">{{ step }}</span>
+              <span>{{ stepLabel(step) }}</span>
+            </li>
+          </ol>
+        </nav>
         
         <!-- Main content area that expands vertically to push footer to the bottom -->
         <div class="flex-1 flex flex-col justify-center py-2">
@@ -188,22 +203,13 @@ import { BiofeedbackService } from '../../services/biofeedback.service';
             </button>
           </div>
 
-          <!-- FINISHED PANEL: Result + Auto Navigate -->
+          <!-- FINISHED PANEL: Result + Explicit Start -->
           <div *ngIf="state() === 'finished'" @panelSwap class="w-full pt-1.5 flex flex-col gap-2.5">
             <button
               (click)="goToGame()"
               class="px-6 min-h-[52px] w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-lg border-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
               {{ i18n.currentLang() === 'th' ? 'เริ่มเล่นเกม →' : 'Start Game →' }}
             </button>
-            <div *ngIf="autoNavCountdown() !== null" class="flex items-center justify-center gap-3" role="status" aria-live="polite">
-              <span class="text-sm text-slate-600 dark:text-slate-300 font-bold tabular-nums">
-                {{ i18n.currentLang() === 'th' ? 'เริ่มเกมอัตโนมัติใน' : 'Starting automatically in' }} {{ autoNavCountdown() }} {{ i18n.currentLang() === 'th' ? 'วินาที' : 's' }}
-              </span>
-              <button (click)="cancelAutoNav()"
-                class="min-h-[44px] px-4 text-sm font-bold text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 rounded-xl">
-                {{ i18n.currentLang() === 'th' ? 'ยกเลิก' : 'Cancel' }}
-              </button>
-            </div>
           </div>
         </div>
 
@@ -281,15 +287,12 @@ export class CalibrateComponent implements OnInit, OnDestroy {
   // Use Signals to guarantee UI reactivity and change detection triggers
   public state = signal<'intro' | 'waiting' | 'pulling' | 'finished'>('intro');
   public timeLeft = signal<number>(3); // Changed from 5s to 3s based on user request
-  // null = auto-navigation cancelled or not running
-  public autoNavCountdown = signal<number | null>(null);
   public showWaitingHint = signal<boolean>(false);
   public peaks: number[] = [];
   public averagePeak = 0;
   public disconnectWarning = false;
 
   private timer: any;
-  private autoNavTimer: any;
   private waitingHintTimer: any;
   private introTimer: any;
   // Timestamp when force first crossed the 5N threshold; the test only starts
@@ -300,6 +303,17 @@ export class CalibrateComponent implements OnInit, OnDestroy {
   // can't stop them — they must be disabled explicitly via [@.disabled]
   public prefersReducedMotion = typeof matchMedia !== 'undefined'
     && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  get currentStep(): 1 | 2 | 3 {
+    return calibrationStepForState(this.state());
+  }
+
+  stepLabel(step: number): string {
+    const labels = this.i18n.currentLang() === 'th'
+      ? ['เชื่อมต่อ', 'วัดแรง', 'พร้อมเล่น']
+      : ['Connect', 'Measure', 'Ready'];
+    return labels[step - 1] ?? labels[0];
+  }
 
   public i18n = inject(I18nService);
   public bleService = inject(BleService);
@@ -369,7 +383,7 @@ export class CalibrateComponent implements OnInit, OnDestroy {
             // Spoken so the user pressing with eyes down also hears it
             this.playVoice('cue_no_force.mp3');
           });
-        }, 30000);
+        }, 10000);
       }
     }, { allowSignalWrites: true });
   }
@@ -498,8 +512,7 @@ export class CalibrateComponent implements OnInit, OnDestroy {
 
   finishCalibration() {
     console.log('CTAR: Completing calibration...');
-    // "Release, done, heading to the game" — covers stop-pressing + result +
-    // what happens next, since the screen auto-advances on its own
+    // "Release, done, ready to start" gives the user control over the next step.
     this.playVoice('cue_calibrate_done.mp3');
     this.biofeedback.playHoldComplete();
     this.state.set('finished');
@@ -507,51 +520,15 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     const safeMax = Math.max(10, this.averagePeak);
     this.ctar.setCalibration(safeMax);
 
-    // Tell the next game session to show the "Get Ready" instructions once.
-    // Tied to calibration (not a permanent flag) so re-calibrating shows it again.
-    localStorage.setItem('ctar_show_game_intro', '1');
-
-    // Clear existing timer if any
-    if (this.autoNavTimer) {
-      clearInterval(this.autoNavTimer);
-    }
-
-    // Auto-navigate with a visible, cancellable countdown. 8 seconds gives
-    // elderly users time to read their result (3s was too fast to react to).
-    this.autoNavCountdown.set(8);
-    this.autoNavTimer = setInterval(() => {
-      this.ngZone.run(() => {
-        const left = (this.autoNavCountdown() ?? 1) - 1;
-        if (left <= 0) {
-          clearInterval(this.autoNavTimer);
-          this.autoNavTimer = null;
-          this.router.navigate(['/game']);
-        } else {
-          this.autoNavCountdown.set(left);
-        }
-      });
-    }, 1000);
-  }
-
-  cancelAutoNav() {
-    if (this.autoNavTimer) {
-      clearInterval(this.autoNavTimer);
-      this.autoNavTimer = null;
-    }
-    this.autoNavCountdown.set(null);
   }
 
   goToGame() {
-    this.cancelAutoNav();
     this.router.navigate(['/game']);
   }
 
   ngOnDestroy() {
     if (this.timer) {
       clearInterval(this.timer);
-    }
-    if (this.autoNavTimer) {
-      clearInterval(this.autoNavTimer);
     }
     if (this.waitingHintTimer) {
       clearTimeout(this.waitingHintTimer);
@@ -569,7 +546,6 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     const currentState = this.state();
     if (currentState === 'waiting' || currentState === 'pulling' || currentState === 'finished') {
       if (this.timer) clearInterval(this.timer);
-      this.cancelAutoNav();
       this.state.set(this.bleService.connectionState() === 'Connected' ? 'waiting' : 'intro');
       this.disconnectWarning = false;
     } else {

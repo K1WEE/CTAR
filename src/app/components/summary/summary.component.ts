@@ -181,6 +181,6 @@ export class SummaryComponent implements OnInit {
   }
 
   finish() {
-    this.router.navigate(['/dashboard']);
+    this.router.navigate(['/patient-portal']);
   }
 }

@@ -413,7 +413,7 @@ export class ResearcherDashboardComponent implements OnInit, AfterViewInit {
         const targetDay = getYYYYMMDD(targetRefStr);
         const localDateLabel = new Date(targetRefStr).toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
         csvContent += `"=========================================================================","",""\n`;
-        csvContent += `"📅 วันที่ฝึก: ${localDateLabel} (Date: ${targetDay})","",""\n`;
+        csvContent += `"วันที่ฝึก: ${localDateLabel} (Date: ${targetDay})","",""\n`;
         csvContent += `"=========================================================================","",""\n\n`;
       }
 
@@ -432,7 +432,7 @@ export class ResearcherDashboardComponent implements OnInit, AfterViewInit {
             const localDateLabel = new Date(s.session_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
             csvContent += `\n`;
             csvContent += `"=========================================================================","",""\n`;
-            csvContent += `"📅 วันที่ฝึก: ${localDateLabel} (Date: ${dayStr})","",""\n`;
+            csvContent += `"วันที่ฝึก: ${localDateLabel} (Date: ${dayStr})","",""\n`;
             csvContent += `"=========================================================================","",""\n\n`;
           }
         }
@@ -442,8 +442,8 @@ export class ResearcherDashboardComponent implements OnInit, AfterViewInit {
         const sessionMax = Number(s.max_force) || 40;
 
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
-        csvContent += `"🏋️ การฝึกครั้งที่ ${index + 1} ของวัน (${dateString} เวลา ${timeString})","",""\n`;
-        csvContent += `"⏱️ แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
+            csvContent += `"การฝึกครั้งที่ ${index + 1} ของวัน (${dateString} เวลา ${timeString})","",""\n`;
+            csvContent += `"แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
         csvContent += `"เวลา (Timestamp)","เวลาสะสม (Seconds)","แรงบีบ (Applied Force in Newtons)"\n`;
 
@@ -473,7 +473,7 @@ export class ResearcherDashboardComponent implements OnInit, AfterViewInit {
 
           if (isRepEndThisStep) {
             csvContent += `"-------------------------------------------------------------------------","",""\n`;
-            csvContent += `"✅ สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
+            csvContent += `"สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
             csvContent += `"-------------------------------------------------------------------------","",""\n`;
           }
         });
@@ -515,9 +515,9 @@ export class ResearcherDashboardComponent implements OnInit, AfterViewInit {
 
     let csvContent = '';
     csvContent += `"=========================================================================","",""\n`;
-    csvContent += `"🏋️ ไฟล์ข้อมูลการฝึก (Single Session Data Sheet)","",""\n`;
-    csvContent += `"📅 วันที่ฝึก: ${dateString} | ⏱️ เวลา: ${timeString}","",""\n`;
-    csvContent += `"💪 แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
+    csvContent += `"ไฟล์ข้อมูลการฝึก (Single Session Data Sheet)","",""\n`;
+    csvContent += `"วันที่ฝึก: ${dateString} | เวลา: ${timeString}","",""\n`;
+    csvContent += `"แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
     csvContent += `"=========================================================================","",""\n\n`;
     csvContent += `"เวลา (Timestamp)","เวลาสะสม (Seconds)","แรงบีบ (Applied Force in Newtons)"\n`;
 
@@ -547,7 +547,7 @@ export class ResearcherDashboardComponent implements OnInit, AfterViewInit {
 
       if (isRepEndThisStep) {
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
-        csvContent += `"✅ สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
+        csvContent += `"สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
       }
     });

@@ -40,6 +40,17 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'header.title': { th: 'CTAR Dashboard', en: 'CTAR Dashboard' },
   'header.subtitle': { th: 'ระบบ IoT ทางการแพทย์', en: 'Medical IoT System' },
   'header.logout': { th: 'ออกจากระบบ', en: 'Logout' },
+  'header.openMenu': { th: 'เปิดเมนู', en: 'Open menu' },
+  'header.closeMenu': { th: 'ปิดเมนู', en: 'Close menu' },
+  'header.lightMode': { th: 'โหมดสว่าง', en: 'Light mode' },
+  'header.darkMode': { th: 'โหมดมืด', en: 'Dark mode' },
+
+  // ─── Accessibility ───
+  'accessibility.fontSize': { th: 'ขนาดตัวอักษร', en: 'Font size' },
+  'accessibility.fontSizeNormal': { th: 'ปกติ', en: 'Normal' },
+  'accessibility.fontSizeLarge': { th: 'ใหญ่', en: 'Large' },
+  'accessibility.fontSizeXLarge': { th: 'ใหญ่มาก', en: 'Extra large' },
+  'accessibility.fontSizeApplied': { th: 'ใช้ขนาดตัวอักษร{0}แล้ว', en: 'Font size set to {0}' },
 
   // ─── Connect ───
   'connect.title': { th: 'เชื่อมต่ออุปกรณ์', en: 'Connect Device' },
@@ -59,7 +70,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'calibrate.of': { th: 'จาก', en: 'of' },
   'calibrate.squeeze': { th: 'กดให้แรงที่สุด!', en: 'PRESS AS HARD AS YOU CAN!' },
   'calibrate.rest': { th: 'พักผ่อน...', en: 'REST AND RELAX...' },
-  'calibrate.complete': { th: 'ปรับตั้งค่าเสร็จสิ้น! 🎉', en: 'Calibration Complete! 🎉' },
+  'calibrate.complete': { th: 'ปรับตั้งค่าเสร็จสิ้น!', en: 'Calibration Complete!' },
   'calibrate.avgForce': { th: 'แรงกดสูงสุด:', en: 'Peak Force:' },
   'calibrate.hint': { th: 'กดค้างไว้ให้เต็มแรง แล้วปล่อยเพื่อเสร็จสิ้น', en: 'Press and hold to peak, then release to finish' },
   'calibrate.adjusting': { th: 'กำลังปรับระดับเกม...', en: 'Adjusting game difficulty...' },
@@ -74,7 +85,7 @@ const TRANSLATIONS: Record<string, Record<Lang, string>> = {
   'game.feedback.holdAlmost': { th: 'ค้างไว้อีกนิดเดียว...!', en: 'Hold it right there...!' },
   'game.feedback.tooHard': { th: 'กดแรงเกินไป! ผ่อนแรงลงเล็กน้อย...', en: 'Too hard! Relax slightly...' },
   'game.feedback.release': { th: 'เยี่ยมยอด! ปล่อยแรงกดให้สุดเพื่อจบ Rep...', en: 'Great hold! Release all force to complete rep...' },
-  'game.feedback.success': { th: 'สำเร็จแล้ว! 🎉', en: 'Rep Completed! 🎉' },
+  'game.feedback.success': { th: 'สำเร็จแล้ว!', en: 'Rep Completed!' },
 
   // ─── Summary ───
   'summary.title': { th: 'ฝึกเสร็จแล้ว!', en: 'Session Complete!' },
@@ -207,7 +218,11 @@ export class I18nService {
     }
 
     effect(() => {
-      localStorage.setItem('lang', this.currentLang());
+      const lang = this.currentLang();
+      localStorage.setItem('lang', lang);
+      if (typeof document !== 'undefined') {
+        document.documentElement.lang = lang;
+      }
     });
   }
 

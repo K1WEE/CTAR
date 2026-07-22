@@ -7,6 +7,42 @@ html, body {
   margin: 0;
 }
 
+body {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* Keep the existing utility vocabulary, while raising small UI copy to an
+   elderly-friendly baseline. Decorative metadata can still opt into caption. */
+.text-xs {
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+}
+
+.text-sm {
+  font-size: 1rem !important;
+  line-height: 1.5 !important;
+}
+
+.text-2xs {
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
+button,
+a {
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
 /* Accessibility: users who opt out of motion (vestibular disorders, common in
    elderly patients) must not see looping/entrance animations anywhere. */
 @media (prefers-reduced-motion: reduce) {

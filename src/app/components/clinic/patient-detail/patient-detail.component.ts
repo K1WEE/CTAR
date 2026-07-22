@@ -5,11 +5,12 @@ import { DataSyncService, RawDataPoint } from '../../../services/data-sync.servi
 import { I18nService } from '../../../services/i18n.service';
 import { ThemeService } from '../../../services/theme.service';
 import { Chart } from 'chart.js/auto';
+import { FontScaleControlComponent } from '../../font-scale-control/font-scale-control.component';
 
 @Component({
   selector: 'app-patient-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FontScaleControlComponent],
   template: `
     <div class="min-h-screen pb-10 relative z-10 text-slate-800 dark:text-slate-200 transition-colors duration-300">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
@@ -24,6 +25,7 @@ import { Chart } from 'chart.js/auto';
             <p class="text-sm text-slate-500 dark:text-slate-400" *ngIf="patient()">{{ patient().first_name }} {{ patient().last_name }}</p>
           </div>
           <div class="flex-1"></div>
+          <app-font-scale-control [inline]="true"></app-font-scale-control>
           <!-- Language Toggle -->
           <button (click)="i18n.toggleLang()" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 text-slate-500 hover:text-brand-accent border border-slate-200 dark:border-white/10 text-sm font-bold transition-all">
             {{ i18n.currentLang() === 'th' ? 'EN' : 'TH' }}
@@ -942,7 +944,7 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
         const targetDay = getYYYYMMDD(targetRefStr);
         const localDateLabel = new Date(targetRefStr).toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
         csvContent += `"=========================================================================","",""\n`;
-        csvContent += `"📅 วันที่ฝึก: ${localDateLabel} (Date: ${targetDay})","",""\n`;
+        csvContent += `"วันที่ฝึก: ${localDateLabel} (Date: ${targetDay})","",""\n`;
         csvContent += `"=========================================================================","",""\n\n`;
       }
 
@@ -961,7 +963,7 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
             const localDateLabel = new Date(s.session_date).toLocaleDateString('th-TH', { day: '2-digit', month: 'long', year: 'numeric' });
             csvContent += `\n`;
             csvContent += `"=========================================================================","",""\n`;
-            csvContent += `"📅 วันที่ฝึก: ${localDateLabel} (Date: ${dayStr})","",""\n`;
+            csvContent += `"วันที่ฝึก: ${localDateLabel} (Date: ${dayStr})","",""\n`;
             csvContent += `"=========================================================================","",""\n\n`;
           }
         }
@@ -971,8 +973,8 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
         const sessionMax = Number(s.max_force) || 40;
 
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
-        csvContent += `"🏋️ การฝึกครั้งที่ ${index + 1} ของวัน (${dateString} เวลา ${timeString})","",""\n`;
-        csvContent += `"⏱️ แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
+            csvContent += `"การฝึกครั้งที่ ${index + 1} ของวัน (${dateString} เวลา ${timeString})","",""\n`;
+            csvContent += `"แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
         csvContent += `"เวลา (Timestamp)","เวลาสะสม (Seconds)","แรงบีบ (Applied Force in Newtons)"\n`;
 
@@ -1002,7 +1004,7 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
 
           if (isRepEndThisStep) {
             csvContent += `"-------------------------------------------------------------------------","",""\n`;
-            csvContent += `"✅ สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
+            csvContent += `"สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
             csvContent += `"-------------------------------------------------------------------------","",""\n`;
           }
         });
@@ -1040,9 +1042,9 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
 
     let csvContent = '';
     csvContent += `"=========================================================================","",""\n`;
-    csvContent += `"🏋️ ไฟล์ข้อมูลการฝึก (Single Session Data Sheet)","",""\n`;
-    csvContent += `"📅 วันที่ฝึก: ${dateString} | ⏱️ เวลา: ${timeString}","",""\n`;
-    csvContent += `"💪 แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
+    csvContent += `"ไฟล์ข้อมูลการฝึก (Single Session Data Sheet)","",""\n`;
+    csvContent += `"วันที่ฝึก: ${dateString} | เวลา: ${timeString}","",""\n`;
+    csvContent += `"แรงบีบเป้าหมายสูงสุด (Calibrated Max): ${sessionMax} N","",""\n`;
     csvContent += `"=========================================================================","",""\n\n`;
     csvContent += `"เวลา (Timestamp)","เวลาสะสม (Seconds)","แรงบีบ (Applied Force in Newtons)"\n`;
 
@@ -1072,7 +1074,7 @@ export class PatientDetailComponent implements OnInit, AfterViewInit {
 
       if (isRepEndThisStep) {
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
-        csvContent += `"✅ สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
+        csvContent += `"สำเร็จรอบที่ ${currentRepVal} (SUCCESSFUL ROUND ${currentRepVal})","ปล่อยแรงตกต่ำกว่า 4.0N เพื่อพักครบกำหนดแล้ว",""\n`;
         csvContent += `"-------------------------------------------------------------------------","",""\n`;
       }
     });

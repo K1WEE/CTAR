@@ -122,7 +122,7 @@ public getSessionDurationSeconds() {
       return;
     }
 
-    // ✅ สำคัญ: กัน Excel อ่านเพี้ยน
+    // สำคัญ: กัน Excel อ่านเพี้ยน
     const BOM = '\uFEFF';
 
     let csvContent = 'DateTime(TH),Time(s),Force\n';

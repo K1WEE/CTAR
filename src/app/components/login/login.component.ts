@@ -4,16 +4,18 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { SupabaseService } from '../../services/supabase.service';
 import { I18nService } from '../../services/i18n.service';
+import { FontScaleControlComponent } from '../font-scale-control/font-scale-control.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink],
+  imports: [CommonModule, FormsModule, RouterLink, FontScaleControlComponent],
   template: `
     <div class="min-h-screen flex items-center justify-center p-4 relative z-10 text-slate-800 dark:text-slate-200 transition-colors duration-300">
       <div class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl shadow-md p-8 w-full max-w-md relative overflow-hidden transition-colors duration-300">
         <!-- Language toggle -->
-        <div class="flex justify-end mb-2 relative z-10">
+        <div class="flex justify-end items-center gap-2 mb-2 relative z-10">
+          <app-font-scale-control [inline]="true"></app-font-scale-control>
           <button (click)="i18n.toggleLang()" class="text-sm font-semibold px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors border border-slate-200 dark:border-slate-700">
             {{ i18n.currentLang() === 'th' ? 'EN' : 'TH' }}
           </button>

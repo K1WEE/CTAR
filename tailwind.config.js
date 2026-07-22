@@ -15,11 +15,17 @@ module.exports = {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        // Sarabun is a looped Thai typeface with clear counters and familiar
+        // shapes for older readers; keep Noto Sans Thai and Inter as fallbacks.
+        sans: ['Sarabun', 'Noto Sans Thai', 'Inter', 'sans-serif'],
       },
       fontSize: {
-        // Used across components (calibrate, reward-task, patient-portal);
-        // without this definition the class silently does nothing.
+        // Semantic typography tokens keep important text readable for older users.
+        body: ['1rem', { lineHeight: '1.5' }],
+        'body-lg': ['1.125rem', { lineHeight: '1.625' }],
+        label: ['1rem', { lineHeight: '1.5' }],
+        caption: ['0.875rem', { lineHeight: '1.5' }],
+        button: ['1.125rem', { lineHeight: '1.5' }],
         '2xs': ['0.65rem', { lineHeight: '1rem' }],
       },
       spacing: {

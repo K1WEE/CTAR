@@ -295,9 +295,9 @@ interface LeaderboardEntry {
 
             <ng-container [ngSwitch]="entry.rank">
 
-              <span *ngSwitchCase="1">🥇</span>
-              <span *ngSwitchCase="2">🥈</span>
-              <span *ngSwitchCase="3">🥉</span>
+              <span *ngSwitchCase="1">อันดับ 1</span>
+              <span *ngSwitchCase="2">อันดับ 2</span>
+              <span *ngSwitchCase="3">อันดับ 3</span>
 
               <span *ngSwitchDefault>
                 #{{ entry.rank }}
@@ -464,15 +464,15 @@ export class RewardTasksComponent implements OnInit, OnDestroy {
     const rate = this.weeklyCompletionRate;
     const lang = this.i18n.currentLang();
     if (lang === 'th') {
-      if (rate === 0) return 'ยังไม่ได้เริ่มภารกิจของสัปดาห์นี้ มาเริ่มฝึกซ้อมกันเลย! 🚀';
+      if (rate === 0) return 'ยังไม่ได้เริ่มภารกิจของสัปดาห์นี้ มาเริ่มฝึกซ้อมกันเลย!';
       if (rate < 50) return `ทำภารกิจสำเร็จแล้ว ${rate}%! เริ่มต้นได้ดีมากครับ`;
-      if (rate < 100) return `ทำภารกิจสำเร็จแล้ว ${rate}%! อีกนิดเดียวจะครบ 100% แล้ว สู้ๆ ครับ! 💪`;
-      return 'ยอดเยี่ยมที่สุด! 🎉 คุณทำภารกิจประจำสัปดาห์ครบ 100% แล้ว!';
+      if (rate < 100) return `ทำภารกิจสำเร็จแล้ว ${rate}%! อีกนิดเดียวจะครบ 100% แล้ว สู้ๆ ครับ!`;
+      return 'ยอดเยี่ยมที่สุด! คุณทำภารกิจประจำสัปดาห์ครบ 100% แล้ว!';
     } else {
-      if (rate === 0) return 'No tasks started yet this week. Let\'s begin training! 🚀';
-      if (rate < 50) return `Weekly tasks ${rate}% completed! Great start! 👏`;
-      if (rate < 100) return `Weekly tasks ${rate}% completed! Almost there, keep it up! 💪`;
-      return 'Outstanding! 🎉 You have completed 100% of your weekly tasks!';
+      if (rate === 0) return 'No tasks started yet this week. Let\'s begin training!';
+      if (rate < 50) return `Weekly tasks ${rate}% completed! Great start!`;
+      if (rate < 100) return `Weekly tasks ${rate}% completed! Almost there, keep it up!`;
+      return 'Outstanding! You have completed 100% of your weekly tasks!';
     }
   }
 

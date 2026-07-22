@@ -41,7 +41,7 @@ interface SessionRecord {
               <!-- Welcome Text (spans 3 columns on large screens) -->
               <div class="lg:col-span-3 space-y-2.5">
                 <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                  {{ i18n.currentLang() === 'th' ? 'สวัสดี' : 'Hello' }}{{ patientName() ? ', ' + patientName() : '' }} 👋
+                  {{ i18n.currentLang() === 'th' ? 'สวัสดี' : 'Hello' }}{{ patientName() ? ', ' + patientName() : '' }}
                 </h2>
                 <p class="text-blue-100 text-base sm:text-lg font-medium max-w-lg leading-relaxed">
                   {{ i18n.currentLang() === 'th' ? 'พร้อมที่จะเริ่มฝึกกล้ามเนื้อการกลืนของคุณหรือยัง?' : 'Ready to train your swallowing muscles today?' }}
@@ -313,19 +313,19 @@ export class PatientPortalComponent implements OnInit {
 
     if (completedCount === 0) {
       return lang === 'th' 
-        ? 'เริ่มต้นการฝึกซ้อมครั้งแรกในสัปดาห์นี้เลย! ทุกก้าวเล็กๆ มีความหมาย 💪'
-        : 'Start your first training session of the week! Every small step counts 💪';
+        ? 'เริ่มต้นการฝึกซ้อมครั้งแรกในสัปดาห์นี้เลย! ทุกก้าวเล็กๆ มีความหมาย'
+        : 'Start your first training session of the week! Every small step counts';
     }
 
     if (completedCount >= 7) {
       return lang === 'th'
-        ? 'มหัศจรรย์มาก! คุณฝึกครบถ้วนในสัปดาห์นี้ รักษาสุขภาพกล้ามเนื้ออย่างสมบูรณ์แบบ! 🎉'
-        : 'Amazing! You trained every single day this week. Perfect dedication! 🎉';
+      ? 'มหัศจรรย์มาก! คุณฝึกครบถ้วนในสัปดาห์นี้ รักษาสุขภาพกล้ามเนื้ออย่างสมบูรณ์แบบ!'
+      : 'Amazing! You trained every single day this week. Perfect dedication!';
     }
 
     return lang === 'th'
-      ? `สัปดาห์นี้คุณฝึกสำเร็จแล้ว ${completedCount} วัน! ทำต่อไปเพื่อสุขภาพที่ดีนะ ❤️`
-      : `You've completed ${completedCount} days of training this week! Keep it up for your health ❤️`;
+      ? `สัปดาห์นี้คุณฝึกสำเร็จแล้ว ${completedCount} วัน! ทำต่อไปเพื่อสุขภาพที่ดีนะ`
+      : `You've completed ${completedCount} days of training this week! Keep it up for your health`;
   }
 
   async ngOnInit() {

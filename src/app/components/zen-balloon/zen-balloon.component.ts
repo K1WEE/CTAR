@@ -24,31 +24,6 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
   template: `
     <div [@.disabled]="prefersReducedMotion" class="game-card bg-white dark:bg-brand-card rounded-3xl shadow-md p-4 sm:p-6 w-full flex flex-col items-center border border-slate-200 dark:border-slate-700 min-h-[450px] h-full relative overflow-hidden transition-colors duration-300">
       
-      <!-- Ready State Overlay (Transparent backdrop, showing game behind it) -->
-      <div *ngIf="gameFlowState() === 'ready' && showReadyInstructions()" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in">
-        <!-- Center translucent instruction card -->
-        <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl w-full max-w-[320px] border border-slate-200 dark:border-white/10 text-center flex flex-col items-center space-y-4 animate-scale-up">
-          <app-chin-tuck-demo size="sm" [showLabel]="false" class="mb-2"></app-chin-tuck-demo>
-
-          <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
-            {{ i18n.currentLang() === 'th' ? 'เตรียมตัวเริ่มเกม' : 'Get Ready' }}
-          </h2>
-
-          <div class="text-slate-700 dark:text-slate-300 text-sm sm:text-base font-bold leading-relaxed space-y-2">
-            <p>1. {{ i18n.currentLang() === 'th' ? 'วางเครื่องมือไว้บนอก' : 'Place device on chest' }}</p>
-            <p>2. {{ i18n.currentLang() === 'th' ? 'วางคางบนแผ่นรอง' : 'Rest chin on pad' }}</p>
-            <p class="text-amber-600 dark:text-amber-400 font-extrabold">
-              {{ i18n.currentLang() === 'th' ? 'ก้มกดเบาๆ เพื่อเริ่มเกม' : 'Press gently to start' }}
-            </p>
-          </div>
-
-          <!-- Dismiss the instructions and start the countdown (does not leave the page) -->
-          <button (click)="dismissReady()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white text-sm font-bold rounded-lg transition-colors w-full mt-1">
-            {{ i18n.currentLang() === 'th' ? 'รับทราบ' : 'Got it' }}
-          </button>
-        </div>
-      </div>
-
       <!-- Countdown State Overlay -->
       <div *ngIf="gameFlowState() === 'countdown'" class="absolute inset-0 bg-slate-950/55 z-30 flex flex-col items-center justify-center p-6 rounded-3xl animate-fade-in text-center">
         <span class="text-white font-bold uppercase tracking-widest text-sm xs:text-base sm:text-lg mb-4 drop-shadow-md">
@@ -129,23 +104,21 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
       <!-- Integrated Top Header Bar -->
       <div class="game-header w-full flex items-center justify-between pb-4 mb-4 border-b border-slate-200 dark:border-white/10 relative z-10">
-        <div class="flex items-center space-x-3 min-w-0">
+        <div class="game-header-main flex items-center space-x-3 min-w-0">
           <button (click)="goBack()"
             [attr.aria-label]="i18n.currentLang() === 'th' ? 'ออกจากการฝึก' : 'Leave training'"
             class="w-12 h-12 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors shrink-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
             <i class="fa-solid fa-arrow-left text-lg" aria-hidden="true"></i>
           </button>
           <div class="text-left min-w-0">
-            <!-- No nowrap: the title wraps to a second line on narrow widths
-                 instead of overflowing under the mute / finish buttons -->
-            <h3 class="font-black text-base xs:text-lg sm:text-xl text-slate-800 dark:text-white leading-tight text-balance">{{ i18n.t('game.activeSession') }}</h3>
+            <h3 class="font-black text-base sm:text-xl text-slate-800 dark:text-white leading-tight whitespace-nowrap overflow-hidden text-ellipsis">{{ i18n.t('game.activeSession') }}</h3>
             <!-- Rep count lives only in the centered pill below to avoid two competing counters -->
             <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-tight font-semibold">
               {{ i18n.t('game.targetReps') }} {{ targetReps }}
             </p>
           </div>
         </div>
-        <div class="flex items-center space-x-2 shrink-0">
+        <div class="game-header-actions flex items-center space-x-2 shrink-0">
           <button 
             (click)="toggleMute()" 
             class="w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 border bg-white dark:bg-slate-800"
@@ -265,6 +238,22 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
     .game-card {
       box-sizing: border-box;
     }
+
+    @media (max-width: 639px) {
+      .game-header {
+        flex-wrap: wrap;
+        row-gap: 0.75rem;
+      }
+
+      .game-header-main,
+      .game-header-actions {
+        width: 100%;
+      }
+
+      .game-header-actions {
+        justify-content: flex-end;
+      }
+    }
     
     @media (max-height: 800px) {
       .game-card {
@@ -301,7 +290,14 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
 
     @media (max-height: 680px) {
       .game-title-container {
-        display: none !important;
+        margin-bottom: 0.25rem !important;
+      }
+      .game-title-container h2 {
+        font-size: 1.125rem !important;
+      }
+      .game-title-container .w-10 {
+        width: 1.5rem !important;
+        height: 1.5rem !important;
       }
       .progress-container {
         margin-top: 0.5rem !important;
@@ -322,18 +318,11 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   public i18n = inject(I18nService);
   public bleService = inject(BleService);
   public gameFlowState = signal<'ready' | 'countdown' | 'playing' | 'disconnected'>('ready');
-  // Controls the "Get Ready" instruction overlay. Dismissed via "รับทราบ" so the
-  // user can see the game; the physical press still starts the countdown either way.
-  public showReadyInstructions = signal<boolean>(true);
   public countdownValue = signal<number>(3);
   public showExitConfirm = signal<boolean>(false);
   public showFinishConfirm = signal<boolean>(false);
   private countdownTimer: any;
   private voiceTimeout: any;
-  private readyDismissTimer: any;
-  // Timestamp when force first crossed 2N while the ready overlay is up; the press
-  // must be sustained 0.2s to dismiss the overlay, filtering out sensor spikes.
-  private readyHoldStart: number | null = null;
   private router = inject(Router);
 
   public isMuted = false;
@@ -465,20 +454,6 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
       // Guard: Do not trigger feedback or target zone evaluation if not actively playing
       if (this.gameFlowState() !== 'playing') {
         this.inTargetZone = false;
-        // While the ready overlay is up, a 2N press held 0.2s dismisses it and
-        // starts the countdown (same outcome as the button or the 5s auto-close).
-        if (this.gameFlowState() === 'ready') {
-          if (force >= 2.0) {
-            if (this.readyHoldStart === null) {
-              this.readyHoldStart = Date.now();
-            } else if (Date.now() - this.readyHoldStart >= 200) {
-              this.readyHoldStart = null;
-              this.ngZone.run(() => this.dismissReady());
-            }
-          } else {
-            this.readyHoldStart = null;
-          }
-        }
         return;
       }
       
@@ -518,7 +493,7 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
       if (connection !== 'Connected' && (flow === 'playing' || flow === 'countdown')) {
         this.ngZone.run(() => this.handleDisconnect());
       } else if (connection === 'Connected' && flow === 'disconnected') {
-        this.ngZone.run(() => this.gameFlowState.set('ready'));
+        this.ngZone.run(() => this.startCountdown());
       }
     }, { allowSignalWrites: true });
   }
@@ -538,9 +513,8 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   }
 
   goToConnect() {
-    // Re-establishing the device after a mid-game drop also re-runs calibration,
-    // which re-verifies the sensor is working before training resumes.
-    this.router.navigate(['/calibrate']);
+    // Reconnect in place and preserve the current calibration/session.
+    this.bleService.connect();
   }
 
   ngOnInit() {
@@ -555,22 +529,9 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
       this.playVoice('intro.mp3');
     }, 600);
 
-    // The "Get Ready" modal is shown once after each calibration: the calibrate
-    // screen sets this flag, and we consume it here so a plain refresh (with no
-    // new calibration) skips the modal. Re-calibrating shows it again.
-    const showIntro = localStorage.getItem('ctar_show_game_intro') === '1';
-    if (showIntro) {
-      localStorage.removeItem('ctar_show_game_intro');
-    } else {
-      this.showReadyInstructions.set(false);
-    }
-
-    // Auto-start the countdown so the game never stalls: a longer beat when the
-    // modal is shown (time to read it), and a near-immediate 0.5s start on a
-    // plain refresh. The device press (2N/0.2s) starts the same countdown sooner.
-    this.readyDismissTimer = setTimeout(() => {
-      this.ngZone.run(() => this.dismissReady());
-    }, showIntro ? 5000 : 500);
+    // Calibration already contains the preparation instructions. Entering the
+    // game therefore starts the single, predictable countdown immediately.
+    this.startCountdown();
   }
 
   toggleMute() {
@@ -826,18 +787,6 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
     this.showFinishConfirm.set(false);
   }
 
-  /**
-   * Close the "Get Ready" instructions and immediately begin the countdown.
-   * All three dismiss routes funnel through here (device press 2N/0.2s, the
-   * "รับทราบ" button, and the 5s auto-close), so the game always starts the
-   * same way. The guard makes repeat calls a no-op once the countdown is live.
-   */
-  dismissReady() {
-    if (this.gameFlowState() !== 'ready') return;
-    this.showReadyInstructions.set(false);
-    this.startCountdown();
-  }
-
   startCountdown() {
     this.gameFlowState.set('countdown');
     this.countdownValue.set(3);
@@ -889,9 +838,6 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
     }
     if (this.voiceTimeout) {
       clearTimeout(this.voiceTimeout);
-    }
-    if (this.readyDismissTimer) {
-      clearTimeout(this.readyDismissTimer);
     }
     this.biofeedback.stopVibrationLoop();
     if (this.activeAudio) {
