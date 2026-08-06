@@ -201,7 +201,7 @@ import { ChinTuckDemoComponent } from '../chin-tuck-demo/chin-tuck-demo.componen
                         before:border-l-[5px] before:border-l-transparent before:border-r-[5px] before:border-r-transparent
                         before:border-b-[7px] before:border-b-rose-700
                         transition-transform duration-300"
-                  [ngClass]="{'scale-110 shadow-lg border-2 border-amber-400': inTargetZone}">
+                  [ngClass]="{'scale-110 shadow-[0_0_30px_rgba(16,185,129,0.6)]': inTargetZone}">
                <i class="fa-solid fa-face-smile text-white text-xl xs:text-2xl drop-shadow-md animate-pulse" *ngIf="inTargetZone"></i>
                <i class="fa-solid fa-wind text-white text-xl xs:text-2xl opacity-80" *ngIf="!inTargetZone"></i>
             </div>
@@ -373,7 +373,7 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   private currentRestMs = 0; // Track rest duration in milliseconds
 
   public holdProgress = 0; // 0 to 100 scale for progress bar
-  private requiredHoldTimeMs = 2000; // Constant 2.0 seconds hold time
+  @Input() requiredHoldTimeMs = 2000; // Configurable hold time, defaults to 2.0s
   private currentHoldMs = 0;
 
   public feedbackMessage = '';
@@ -705,8 +705,7 @@ export class ZenBalloonComponent implements OnInit, OnDestroy {
   }
 
   private updateDifficulty() {
-    // Lock hold time to constant 2.0 seconds
-    this.requiredHoldTimeMs = 2000;
+    // Hold time is kept at the configured settings value (no longer hardcoded)
 
     // Randomize target zone position in the range 65% - 95% of PEAK
     // Let's use a 15% width target zone.

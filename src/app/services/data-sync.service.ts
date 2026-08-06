@@ -236,4 +236,25 @@ export class DataSyncService {
       return null;
     }
   }
+
+  /**
+   * Updates target reps and hold duration settings for a specific patient.
+   */
+  async updatePatientSettings(patientId: string, targetReps: number, holdDurationMs: number): Promise<boolean> {
+    try {
+      const { error } = await this.supabase
+        .from('patients')
+        .update({
+          target_reps: targetReps,
+          hold_duration_ms: holdDurationMs
+        })
+        .eq('id', patientId);
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('Failed to update patient settings:', err);
+      return false;
+    }
+  }
 }

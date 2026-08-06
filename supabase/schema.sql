@@ -8,6 +8,9 @@ CREATE TABLE IF NOT EXISTS public.patients (
     last_name TEXT NOT NULL,
     role VARCHAR DEFAULT 'user' NOT NULL,
     dob DATE,
+    stars INTEGER DEFAULT 0,
+    target_reps INTEGER DEFAULT 15,
+    hold_duration_ms INTEGER DEFAULT 2000,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -200,3 +203,5 @@ RETURNS void AS $$
 $$ LANGUAGE sql SECURITY DEFINER;
 
 ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS stars INTEGER DEFAULT 0;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS target_reps INTEGER DEFAULT 15;
+ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hold_duration_ms INTEGER DEFAULT 2000;

@@ -38,21 +38,21 @@ import { calibrationStepForState } from './calibrate-flow';
           <button (click)="goBack()"
             [attr.aria-label]="backButtonLabel()"
             [title]="backButtonLabel()"
-            class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors shrink-0 cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
-            <i class="fa-solid text-base" [ngClass]="state() === 'intro' ? 'fa-arrow-left' : 'fa-rotate-left'" aria-hidden="true"></i>
+            class="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors shrink-0 cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+            <i class="fa-solid text-lg" [ngClass]="state() === 'intro' ? 'fa-arrow-left' : 'fa-rotate-left'" aria-hidden="true"></i>
           </button>
           
           <!-- Connection Icon status tracker -->
-          <div class="w-12 h-12 rounded-full flex items-center justify-center shadow-inner border absolute left-1/2 -translate-x-1/2 transition-colors duration-300"
+          <div class="w-14 h-14 rounded-full flex items-center justify-center shadow-inner border absolute left-1/2 -translate-x-1/2 transition-colors duration-300"
                [ngClass]="bleService.connectionState() === 'Connected' 
                  ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700'">
-            <i class="text-xl" 
+            <i class="text-2xl" 
                [ngClass]="bleService.connectionState() === 'Connected' 
                  ? 'fa-solid fa-check text-emerald-600 dark:text-emerald-400'
                  : 'fa-brands fa-bluetooth-b text-blue-600 dark:text-blue-400'"></i>
           </div>
-          <div class="w-10 h-10"></div>
+          <div class="w-12 h-12"></div>
         </div>
 
         <nav aria-label="Calibration progress" class="mb-3 w-full">
@@ -71,10 +71,10 @@ import { calibrationStepForState } from './calibrate-flow';
         
         <!-- Main content area that expands vertically to push footer to the bottom -->
         <div class="flex-1 flex flex-col justify-center py-2">
-          <h2 class="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-2 leading-tight" role="status" aria-live="polite">{{ getPageStateTitle() }}</h2>
+          <h2 class="text-3xl sm:text-4xl font-black text-slate-800 dark:text-white mb-2 leading-tight" role="status" aria-live="polite">{{ getPageStateTitle() }}</h2>
           
           <!-- Subtitle help text in active testing to remove bottom help cards -->
-          <p *ngIf="state() === 'pulling'" @panelSwap class="text-sm sm:text-base font-bold text-rose-600 dark:text-rose-400 mb-3">
+          <p *ngIf="state() === 'pulling'" @panelSwap class="text-base sm:text-lg font-black text-rose-600 dark:text-rose-400 mb-3">
             {{ i18n.currentLang() === 'th' ? 'ก้มคางกดลงค้างไว้ให้แรงที่สุด!' : 'Press and hold your chin down as hard as you can!' }}
           </p>
 
@@ -88,17 +88,17 @@ import { calibrationStepForState } from './calibrate-flow';
           <!-- UNIFIED DISPLAY: Steps during both Intro (Connecting) and Waiting (Ready) states -->
           <div *ngIf="state() === 'intro' || state() === 'waiting'" @panelSwap class="flex flex-col items-center w-full mb-3">
             <!-- Steps block for seniors (larger text and badges) -->
-            <div class="steps-block space-y-2.5 text-left w-full bg-slate-100/50 dark:bg-slate-800/30 p-4 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
-              <div class="flex items-center gap-3 text-base sm:text-lg text-slate-700 dark:text-slate-300 font-bold">
-                <span class="w-7 h-7 rounded-full bg-cyan-600 text-white flex items-center justify-center text-sm font-black shrink-0 shadow-sm">1</span>
+            <div class="steps-block space-y-3 text-left w-full bg-slate-100/50 dark:bg-slate-800/30 p-5 rounded-2xl border border-slate-200/50 dark:border-slate-800/50">
+              <div class="flex items-center gap-3 text-lg sm:text-xl text-slate-700 dark:text-slate-300 font-extrabold">
+                <span class="w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center text-base font-black shrink-0 shadow-sm">1</span>
                 <span>{{ i18n.t('onboarding.step1') }}</span>
               </div>
-              <div class="flex items-center gap-3 text-base sm:text-lg text-slate-700 dark:text-slate-300 font-bold">
-                <span class="w-7 h-7 rounded-full bg-cyan-600 text-white flex items-center justify-center text-sm font-black shrink-0 shadow-sm">2</span>
+              <div class="flex items-center gap-3 text-lg sm:text-xl text-slate-700 dark:text-slate-300 font-extrabold">
+                <span class="w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center text-base font-black shrink-0 shadow-sm">2</span>
                 <span>{{ i18n.t('onboarding.step2') }}</span>
               </div>
-              <div class="flex items-center gap-3 text-base sm:text-lg text-slate-700 dark:text-slate-300 font-bold">
-                <span class="w-7 h-7 rounded-full bg-cyan-600 text-white flex items-center justify-center text-sm font-black shrink-0 shadow-sm">3</span>
+              <div class="flex items-center gap-3 text-lg sm:text-xl text-slate-700 dark:text-slate-300 font-extrabold">
+                <span class="w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center text-base font-black shrink-0 shadow-sm">3</span>
                 <span>{{ i18n.t('onboarding.step3') }}</span>
               </div>
             </div>
@@ -109,8 +109,8 @@ import { calibrationStepForState } from './calibrate-flow';
                spoken cue already tell the user to press, so no progress box is shown.
                Only this safety hint surfaces, and only after a stall with no force. -->
           <div *ngIf="state() === 'waiting' && showWaitingHint()" @panelSwap role="alert"
-               class="mt-1 mb-2 bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 p-3 rounded-xl text-left text-sm font-bold w-full flex items-start gap-2">
-            <i class="fa-solid fa-circle-info text-base mt-0.5 shrink-0" aria-hidden="true"></i>
+               class="mt-1 mb-2 bg-sky-500/10 border border-sky-500/20 text-sky-700 dark:text-sky-300 p-4 rounded-xl text-left text-base font-extrabold w-full flex items-start gap-2">
+            <i class="fa-solid fa-circle-info text-lg mt-0.5 shrink-0" aria-hidden="true"></i>
             <span>{{ i18n.currentLang() === 'th' ? 'ยังไม่พบแรงกดจากอุปกรณ์ ลองตรวจสอบว่าสวมอุปกรณ์ถูกต้อง หรือกดคางลงอีกครั้ง' : 'No force detected yet. Check the device is positioned correctly, then press your chin down again.' }}</span>
           </div>
 
@@ -120,17 +120,17 @@ import { calibrationStepForState } from './calibrate-flow';
             <!-- Highly Compact Inner Card (Without pink background color) -->
             <div class="w-full rounded-2xl p-5 mb-3 border-2 transition-all duration-300 shadow-sm flex flex-col items-center border-rose-200 dark:border-rose-900/30">
 
-              <p class="text-sm sm:text-base font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1">
+              <p class="text-base sm:text-lg font-black text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-1.5">
                 {{ i18n.currentLang() === 'th' ? 'แรงกดขณะนี้' : 'Current Force' }}
               </p>
               
-              <!-- Massive live force value for elderly -->
-              <div class="text-7xl sm:text-8xl font-black text-rose-600 dark:text-rose-400 tabular-nums tracking-tight mb-3">
-                {{ ctar.currentForce() | number:'1.0-1' }}<span class="text-2xl sm:text-3xl font-bold ml-1">N</span>
+              <!-- Live force value -->
+              <div class="text-6xl sm:text-7xl font-black text-rose-600 dark:text-rose-400 tabular-nums tracking-tight mb-3">
+                {{ ctar.currentForce() | number:'1.0-1' }}<span class="text-xl sm:text-2xl font-bold ml-1">N</span>
               </div>
               
               <!-- Timer Badge -->
-              <div class="px-4 py-1.5 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 rounded-full font-black text-sm flex items-center gap-1.5 shadow-sm">
+              <div class="px-5 py-2 bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 rounded-full font-black text-base flex items-center gap-1.5 shadow-sm">
                 <i class="fa-regular fa-clock"></i>
                 <span>{{ i18n.currentLang() === 'th' ? 'เวลาบันทึกแรง:' : 'Testing time:' }} {{ timeLeft() }}s</span>
               </div>
@@ -140,17 +140,17 @@ import { calibrationStepForState } from './calibrate-flow';
           <!-- FINISHED PANEL: Result + Auto Navigate (Highly Compact) -->
           <div *ngIf="state() === 'finished'" @panelSwap class="space-y-4 w-full pt-2 flex flex-col items-center justify-center">
             
-            <div class="text-slate-600 dark:text-slate-300 font-extrabold text-sm uppercase tracking-wider">
+            <div class="text-slate-600 dark:text-slate-300 font-black text-base uppercase tracking-wider">
               {{ i18n.currentLang() === 'th' ? 'แรงกดสูงสุดที่ทดสอบได้' : 'Peak Force Measured' }}
             </div>
             
-            <!-- BIG Result value -->
-            <div class="text-7xl sm:text-8xl font-black text-emerald-500 dark:text-emerald-400 tabular-nums tracking-tight mb-2">
-              {{ averagePeak | number:'1.0-1' }}<span class="text-2xl sm:text-3xl font-bold ml-1">N</span>
+            <!-- Result value -->
+            <div class="text-6xl sm:text-7xl font-black text-emerald-500 dark:text-emerald-400 tabular-nums tracking-tight mb-2">
+              {{ averagePeak | number:'1.0-1' }}<span class="text-xl sm:text-2xl font-bold ml-1">N</span>
             </div>
 
-            <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3.5 max-w-sm mx-auto text-emerald-700 dark:text-emerald-400 text-sm font-bold flex items-center justify-center gap-2">
-              <i class="fa-solid fa-circle-check text-base text-emerald-500"></i>
+            <div class="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 max-w-sm mx-auto text-emerald-700 dark:text-emerald-400 text-base font-extrabold flex items-center justify-center gap-2">
+              <i class="fa-solid fa-circle-check text-lg text-emerald-500"></i>
               <span>{{ i18n.currentLang() === 'th' ? 'บันทึกแรงกดสำเร็จ พร้อมเริ่มเล่นเกม' : 'Force calibrated successfully' }}</span>
             </div>
           </div>
@@ -162,25 +162,25 @@ import { calibrationStepForState } from './calibrate-flow';
           <div *ngIf="state() === 'intro'" @panelSwap class="space-y-2.5 w-full">
             <button 
               (click)="connect()"
-              class="px-6 min-h-[52px] w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-lg flex items-center justify-center cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
-              <i class="fa-solid fa-link mr-2.5 text-base"></i> {{ i18n.t('connect.btnConnect') }}
+              class="px-6 min-h-[58px] w-full bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl shadow-xl transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-xl flex items-center justify-center cursor-pointer border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+              <i class="fa-solid fa-link mr-2.5 text-lg"></i> {{ i18n.t('connect.btnConnect') }}
             </button>
             
             <button *ngIf="supabase.userRole() === 'admin' || isDevMode()"
               (click)="simulate()"
-              class="px-6 min-h-[44px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold rounded-2xl transition-all duration-300 flex items-center justify-center text-sm border border-slate-200 dark:border-slate-700 mt-2 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+              class="px-6 min-h-[48px] w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-extrabold rounded-2xl transition-all duration-300 flex items-center justify-center text-base border border-slate-200 dark:border-slate-700 mt-2 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
               <i class="fa-solid fa-flask mr-1.5"></i> {{ i18n.t('connect.btnSimulate') }}
             </button>
             
             <!-- Disconnection warning -->
-            <div *ngIf="disconnectWarning" role="alert" class="mt-2.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-3 rounded-xl text-left text-sm font-bold w-full flex items-start gap-2">
-              <i class="fa-solid fa-circle-exclamation text-base mt-0.5 shrink-0 text-red-500"></i>
+            <div *ngIf="disconnectWarning" role="alert" class="mt-2.5 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 p-4 rounded-xl text-left text-base font-extrabold w-full flex items-start gap-2">
+              <i class="fa-solid fa-circle-exclamation text-lg mt-0.5 shrink-0 text-red-500"></i>
               <span>{{ i18n.currentLang() === 'th' ? 'การเชื่อมต่ออุปกรณ์ขาดหาย! กรุณาเชื่อมต่อใหม่อีกครั้ง' : 'Device disconnected! Please connect again.' }}</span>
             </div>
             
-            <div *ngIf="bleService.error()" role="alert" class="mt-2.5 bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-xl text-left text-sm">
-              <p class="font-bold flex items-center"><i class="fa-solid fa-circle-exclamation mr-1.5"></i> {{ i18n.t('error.title') }}</p>
-              <p class="mt-0.5 text-sm">{{ friendlyError(bleService.error()) }}</p>
+            <div *ngIf="bleService.error()" role="alert" class="mt-2.5 bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl text-left text-base">
+              <p class="font-black flex items-center"><i class="fa-solid fa-circle-exclamation mr-1.5 text-lg"></i> {{ i18n.t('error.title') }}</p>
+              <p class="mt-0.5 text-base">{{ friendlyError(bleService.error()) }}</p>
             </div>
           </div>
 
@@ -192,11 +192,11 @@ import { calibrationStepForState } from './calibrate-flow';
               (mouseup)="setMockSqueezing(false)"
               (touchstart)="setMockSqueezing(true)"
               (touchend)="setMockSqueezing(false)"
-              class="px-6 min-h-[52px] w-full bg-gradient-to-r text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 select-none cursor-pointer flex items-center justify-center text-base border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+              class="px-6 min-h-[58px] w-full bg-gradient-to-r text-white font-black rounded-2xl shadow-md transition-all duration-300 select-none cursor-pointer flex items-center justify-center text-lg border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
               [ngClass]="state() === 'pulling'
                 ? 'from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 focus-visible:ring-rose-300'
                 : 'from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 focus-visible:ring-amber-300'">
-              <i class="fa-solid fa-circle-chevron-down mr-2 text-base"></i>
+              <i class="fa-solid fa-circle-chevron-down mr-2 text-lg"></i>
               {{ state() === 'pulling'
                 ? (i18n.currentLang() === 'th' ? 'กดค้างไว้ต่อเนื่อง...' : 'Keep holding...')
                 : (i18n.currentLang() === 'th' ? 'กดค้างตรงนี้เพื่อกดจำลองแรง' : 'Hold here to simulate force') }}
@@ -207,9 +207,18 @@ import { calibrationStepForState } from './calibrate-flow';
           <div *ngIf="state() === 'finished'" @panelSwap class="w-full pt-1.5 flex flex-col gap-2.5">
             <button
               (click)="goToGame()"
-              class="px-6 min-h-[52px] w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold rounded-2xl shadow-md transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-lg border-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+              class="px-6 min-h-[58px] w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black rounded-2xl shadow-md transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-xl border-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
               {{ i18n.currentLang() === 'th' ? 'เริ่มเล่นเกม →' : 'Start Game →' }}
             </button>
+            <div *ngIf="autoNavCountdown() !== null" class="flex items-center justify-center gap-3" role="status" aria-live="polite">
+              <span class="text-base text-slate-600 dark:text-slate-300 font-extrabold tabular-nums">
+                {{ i18n.currentLang() === 'th' ? 'เริ่มเกมอัตโนมัติใน' : 'Starting automatically in' }} {{ autoNavCountdown() }} {{ i18n.currentLang() === 'th' ? 'วินาที' : 's' }}
+              </span>
+              <button (click)="cancelAutoNav()"
+                class="min-h-[48px] px-4 text-base font-bold text-slate-600 dark:text-slate-300 underline underline-offset-4 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer bg-transparent border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/70 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 rounded-xl">
+                {{ i18n.currentLang() === 'th' ? 'ยกเลิก' : 'Cancel' }}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -287,12 +296,14 @@ export class CalibrateComponent implements OnInit, OnDestroy {
   // Use Signals to guarantee UI reactivity and change detection triggers
   public state = signal<'intro' | 'waiting' | 'pulling' | 'finished'>('intro');
   public timeLeft = signal<number>(3); // Changed from 5s to 3s based on user request
+  public autoNavCountdown = signal<number | null>(null);
   public showWaitingHint = signal<boolean>(false);
   public peaks: number[] = [];
   public averagePeak = 0;
   public disconnectWarning = false;
 
   private timer: any;
+  private autoNavTimer: any;
   private waitingHintTimer: any;
   private introTimer: any;
   // Timestamp when force first crossed the 5N threshold; the test only starts
@@ -520,15 +531,45 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     const safeMax = Math.max(10, this.averagePeak);
     this.ctar.setCalibration(safeMax);
 
+    if (this.autoNavTimer) {
+      clearInterval(this.autoNavTimer);
+    }
+
+    // Auto-navigate with a visible, cancellable countdown (8 seconds)
+    this.autoNavCountdown.set(8);
+    this.autoNavTimer = setInterval(() => {
+      this.ngZone.run(() => {
+        const left = (this.autoNavCountdown() ?? 1) - 1;
+        if (left <= 0) {
+          clearInterval(this.autoNavTimer);
+          this.autoNavTimer = null;
+          this.router.navigate(['/game']);
+        } else {
+          this.autoNavCountdown.set(left);
+        }
+      });
+    }, 1000);
+  }
+
+  cancelAutoNav() {
+    if (this.autoNavTimer) {
+      clearInterval(this.autoNavTimer);
+      this.autoNavTimer = null;
+    }
+    this.autoNavCountdown.set(null);
   }
 
   goToGame() {
+    this.cancelAutoNav();
     this.router.navigate(['/game']);
   }
 
   ngOnDestroy() {
     if (this.timer) {
       clearInterval(this.timer);
+    }
+    if (this.autoNavTimer) {
+      clearInterval(this.autoNavTimer);
     }
     if (this.waitingHintTimer) {
       clearTimeout(this.waitingHintTimer);
@@ -546,6 +587,7 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     const currentState = this.state();
     if (currentState === 'waiting' || currentState === 'pulling' || currentState === 'finished') {
       if (this.timer) clearInterval(this.timer);
+      this.cancelAutoNav();
       this.state.set(this.bleService.connectionState() === 'Connected' ? 'waiting' : 'intro');
       this.disconnectWarning = false;
     } else {

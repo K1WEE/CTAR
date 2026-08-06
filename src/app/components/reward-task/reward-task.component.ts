@@ -32,14 +32,14 @@ interface LeaderboardEntry {
   <div class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-sm h-full flex flex-col justify-between">
 
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-6 border-b border-slate-100 dark:border-white/5 pb-4">
 
       <div>
-        <h2 class="text-2xl font-bold text-slate-800 dark:text-white">
+        <h2 class="text-3xl font-extrabold text-slate-800 dark:text-white">
           ภารกิจประจำสัปดาห์
         </h2>
 
-        <p class="text-slate-600 dark:text-slate-300 text-sm mt-1">
+        <p class="text-slate-600 dark:text-slate-300 text-base font-semibold mt-1">
           ฝึกฝนอย่างต่อเนื่องเพื่อรับดาว ⭐
         </p>
       </div>
@@ -47,18 +47,18 @@ interface LeaderboardEntry {
       <div class="flex items-center gap-2">
 
         <!-- Stars badge -->
-        <div class="flex items-center gap-2 bg-amber-400/20 text-amber-700 dark:text-amber-400 px-4 py-2 rounded-2xl">
-          <i class="fa-solid fa-star"></i>
-          <span class="font-bold">{{ totalStars }}</span>
+        <div class="flex items-center gap-2 bg-amber-400/20 text-amber-700 dark:text-amber-400 px-4 py-2.5 rounded-2xl">
+          <i class="fa-solid fa-star text-xl"></i>
+          <span class="font-extrabold text-lg">{{ totalStars }}</span>
         </div>
 
         <!-- Leaderboard button -->
         <button
           (click)="openLeaderboard()"
-          class="w-10 h-10 rounded-2xl border border-slate-200 dark:border-white/10
+          class="w-12 h-12 rounded-2xl border border-slate-200 dark:border-white/10
                  bg-white/50 dark:bg-white/5 flex items-center justify-center
-                 text-slate-500 hover:text-yellow-400 hover:border-yellow-400/30
-                 transition-all duration-200"
+                 text-slate-600 dark:text-slate-300 hover:text-yellow-400 hover:border-yellow-400/30
+                 transition-all duration-200 text-lg"
           aria-label="ดูอันดับผู้เล่น">
           <i class="fa-solid fa-trophy"></i>
         </button>
@@ -72,20 +72,20 @@ interface LeaderboardEntry {
 
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 relative z-10">
         <div>
-          <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block mb-0.5">
+          <span class="text-sm sm:text-base font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 block mb-0.5">
             {{ i18n.currentLang() === 'th' ? 'ภาพรวมความก้าวหน้า' : 'Overall Progress' }}
           </span>
-          <h3 class="text-lg sm:text-xl font-black text-slate-800 dark:text-white">
+          <h3 class="text-xl sm:text-2xl font-black text-slate-800 dark:text-white">
             {{ i18n.currentLang() === 'th' ? 'พัฒนาการสัปดาห์นี้:' : 'Weekly Progress:' }} <span class="text-emerald-500">{{ weeklyCompletionRate }}%</span>
           </h3>
         </div>
-        <div class="text-slate-600 dark:text-slate-300 text-sm font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full self-start sm:self-auto">
+        <div class="text-slate-600 dark:text-slate-300 text-base font-bold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-3.5 py-2 rounded-full self-start sm:self-auto shadow-sm">
           {{ tasks.length }} {{ i18n.currentLang() === 'th' ? 'ภารกิจที่ต้องทำ' : 'tasks active' }}
         </div>
       </div>
       
       <!-- Big Progress Bar -->
-      <div class="w-full h-3 rounded-full bg-slate-200/70 dark:bg-slate-700/50 overflow-hidden relative z-10 shadow-inner">
+      <div class="w-full h-3.5 rounded-full bg-slate-200/70 dark:bg-slate-700/50 overflow-hidden relative z-10 shadow-inner">
         <div
           class="h-full bg-emerald-500 transition-all duration-700 ease-out"
           [style.width.%]="weeklyCompletionRate">
@@ -93,8 +93,8 @@ interface LeaderboardEntry {
       </div>
       
       <!-- Motivation Message -->
-      <p class="text-sm sm:text-base font-semibold text-slate-700 dark:text-emerald-300/90 mt-3 sm:mt-4 flex items-center gap-2 relative z-10 text-pretty">
-        <i class="fa-solid fa-circle-check text-emerald-500 text-sm sm:text-base"></i>
+      <p class="text-base sm:text-lg font-extrabold text-slate-700 dark:text-emerald-300/90 mt-3 sm:mt-4 flex items-center gap-2 relative z-10 text-pretty">
+        <i class="fa-solid fa-circle-check text-emerald-500 text-base sm:text-lg"></i>
         <span>{{ getWeeklyProgressMessage() }}</span>
       </p>
     </div>
@@ -119,14 +119,14 @@ interface LeaderboardEntry {
             <!-- Content -->
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <h3 class="font-bold text-base text-slate-800 dark:text-white truncate">
+                <h3 class="font-extrabold text-lg sm:text-xl text-slate-800 dark:text-white truncate">
                   {{ task.title }}
                 </h3>
                 <span *ngIf="task.completed" class="text-emerald-500 text-sm">
                   <i class="fa-solid fa-circle-check"></i>
                 </span>
               </div>
-              <p class="text-sm sm:text-base text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+              <p class="text-base sm:text-lg text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                 {{ task.description }}
               </p>
 
@@ -138,7 +138,7 @@ interface LeaderboardEntry {
                     [style.width.%]="(task.progress / task.target) * 100">
                   </div>
                 </div>
-                <div class="flex justify-between text-sm mt-2 text-slate-600 dark:text-slate-300 font-semibold">
+                <div class="flex justify-between text-base mt-2 text-slate-700 dark:text-slate-200 font-bold">
                   <span>{{ task.progress }} / {{ task.target }}</span>
                   <span class="text-amber-700 dark:text-amber-400 flex items-center gap-1">
                     <span>⭐</span>
@@ -156,7 +156,7 @@ interface LeaderboardEntry {
       <ng-template #noTasks>
         <div class="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-6 border border-slate-200 dark:border-white/5 text-center text-slate-500">
           <i class="fa-solid fa-clipboard-list text-2xl mb-2 opacity-50"></i>
-          <p class="text-sm">ไม่มีภารกิจในขณะนี้</p>
+          <p class="text-base font-semibold">ไม่มีภารกิจในขณะนี้</p>
         </div>
       </ng-template>
 
@@ -212,11 +212,11 @@ interface LeaderboardEntry {
           <!-- Title -->
           <div>
 
-            <h2 class="text-xl font-bold text-slate-800 dark:text-white">
+            <h2 class="text-2xl font-extrabold text-slate-800 dark:text-white">
               อันดับผู้เล่น
             </h2>
 
-            <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
+            <p class="text-base text-slate-600 dark:text-slate-300 mt-1 font-semibold">
               ผู้ที่สะสมดาวได้สูงสุด
             </p>
 
@@ -249,7 +249,7 @@ interface LeaderboardEntry {
 
       <i class="fa-solid fa-spinner fa-spin text-blue-400 text-3xl"></i>
 
-      <p class="mt-4 text-slate-600 dark:text-slate-300">
+      <p class="mt-4 text-lg font-bold text-slate-600 dark:text-slate-300">
         กำลังโหลดข้อมูล...
       </p>
 
@@ -285,7 +285,7 @@ interface LeaderboardEntry {
         <div class="w-10 text-center shrink-0">
 
           <div
-            class="text-lg font-bold"
+            class="text-xl font-extrabold"
 
             [class.text-amber-600]="entry.rank === 1"
             [class.text-slate-500]="entry.rank === 2"
@@ -333,7 +333,7 @@ interface LeaderboardEntry {
         <div class="flex-1 min-w-0">
 
           <div
-            class="text-base font-semibold truncate"
+            class="text-lg font-bold truncate"
 
             [class.text-blue-600]="entry.isMe"
             [class.dark:text-blue-300]="entry.isMe"
@@ -345,7 +345,7 @@ interface LeaderboardEntry {
 
             <span
               *ngIf="entry.isMe"
-              class="text-sm font-normal opacity-70 ml-1">
+              class="text-base font-semibold opacity-70 ml-1">
 
               (คุณ)
 
@@ -358,7 +358,7 @@ interface LeaderboardEntry {
         <!-- ===================== Stars ===================== -->
         <div class="shrink-0 text-right">
 
-          <div class="text-lg font-bold text-amber-700 dark:text-amber-400">
+          <div class="text-xl font-extrabold text-amber-700 dark:text-amber-400">
             ⭐ {{ entry.stars }}
           </div>
 
@@ -381,7 +381,7 @@ interface LeaderboardEntry {
 
         </div>
 
-        <p class="mt-4 text-slate-600 dark:text-slate-300">
+        <p class="mt-4 text-lg font-bold text-slate-600 dark:text-slate-300">
           ยังไม่มีข้อมูลผู้เล่น
         </p>
 
@@ -398,14 +398,14 @@ interface LeaderboardEntry {
              bg-blue-50 dark:bg-blue-500/10
              px-5 py-4">
 
-      <div class="text-sm font-medium text-blue-500 mb-3">
+      <div class="text-base font-bold text-blue-500 mb-3">
         อันดับของคุณ
       </div>
 
       <div class="flex items-center gap-4">
 
         <!-- Rank -->
-        <div class="text-2xl font-bold text-blue-500 shrink-0">
+        <div class="text-3xl font-extrabold text-blue-500 shrink-0">
           #{{ myEntry.rank }}
         </div>
 
@@ -415,7 +415,7 @@ interface LeaderboardEntry {
                  bg-blue-500/20
                  text-blue-500
                  flex items-center justify-center
-                 font-bold">
+                 font-extrabold text-base shrink-0">
 
           {{ myEntry.first_name[0] }}{{ myEntry.last_name[0] }}
 
@@ -424,14 +424,14 @@ interface LeaderboardEntry {
         <!-- Name -->
         <div class="flex-1">
 
-          <div class="font-bold text-slate-800 dark:text-white">
+          <div class="font-extrabold text-lg text-slate-800 dark:text-white">
             {{ myEntry.first_name }} {{ myEntry.last_name }}
           </div>
 
         </div>
 
         <!-- Stars -->
-        <div class="text-xl font-bold text-amber-700 dark:text-amber-400">
+        <div class="text-2xl font-extrabold text-amber-700 dark:text-amber-400">
           ⭐ {{ myEntry.stars }}
         </div>
 
