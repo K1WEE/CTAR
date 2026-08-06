@@ -9,7 +9,7 @@ import { I18nService } from '../../services/i18n.service';
   imports: [CommonModule],
   template: `
     <div [ngClass]="inline
-      ? 'font-scale-control relative'
+      ? 'font-scale-control relative z-40'
       : 'font-scale-control fixed top-[12px] right-[12px] z-50 sm:top-[16px] sm:right-[16px]'">
       <button
         type="button"
