@@ -47,7 +47,7 @@ export class AppComponent {
 
   private updateGlobalFontControl(url: string): void {
     // Pages with a visible header render the control beside the language toggle.
-    const hasInlineControl = ['/patient-portal', '/clinic', '/login', '/register']
+    const hasInlineControl = ['/patient-portal', '/clinic', '/login', '/register', '/game']
       .some(path => url.startsWith(path));
     this.showGlobalFontControl.set(!hasInlineControl);
   }

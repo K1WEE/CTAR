@@ -18,7 +18,7 @@ export const UserSchema = z.object({
       (val) => /[a-z]/.test(val) && /[A-Z]/.test(val) && /[0-9]/.test(val),
       { message: 'register.error.passwordComplexity' }
     ),
-  role: z.enum(['user', 'doctor']),
+  role: z.literal('user').default('user'),
 });
 export type User = z.infer<typeof UserSchema>;
 @Component({
@@ -31,7 +31,7 @@ export type User = z.infer<typeof UserSchema>;
         <!-- Language toggle -->
         <div class="flex justify-end items-center gap-2 mb-2 relative z-30">
           <app-font-scale-control [inline]="true"></app-font-scale-control>
-          <button (click)="i18n.toggleLang()" class="text-sm font-semibold px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors border border-slate-200 dark:border-slate-700">
+          <button (click)="i18n.toggleLang()" class="min-h-12 text-base font-semibold px-3.5 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors border border-slate-200 dark:border-slate-700">
             {{ i18n.currentLang() === 'th' ? 'EN' : 'TH' }}
           </button>
         </div>
@@ -47,21 +47,25 @@ export type User = z.infer<typeof UserSchema>;
         <form (ngSubmit)="onSubmit()" class="space-y-5 relative z-10">
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <label class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('register.firstName') }}</label>
+              <label for="register-first-name" class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('register.firstName') }}</label>
               <input 
+                id="register-first-name"
                 type="text" 
                 [(ngModel)]="firstName" 
                 name="firstName"
+                autocomplete="given-name"
                 required
                 class="w-full px-4 py-4 text-lg sm:text-xl bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="สมชาย">
             </div>
             <div>
-              <label class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('register.lastName') }}</label>
+              <label for="register-last-name" class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('register.lastName') }}</label>
               <input 
+                id="register-last-name"
                 type="text" 
                 [(ngModel)]="lastName" 
                 name="lastName"
+                autocomplete="family-name"
                 required
                 class="w-full px-4 py-4 text-lg sm:text-xl bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="ใจดี">
@@ -69,15 +73,17 @@ export type User = z.infer<typeof UserSchema>;
           </div>
 
           <div>
-            <label class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('login.email') }}</label>
+            <label for="register-email" class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('login.email') }}</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fa-regular fa-envelope text-slate-400 dark:text-slate-500 text-lg"></i>
               </div>
               <input 
+                id="register-email"
                 type="email" 
                 [(ngModel)]="email" 
                 name="email"
+                autocomplete="email"
                 required
                 class="w-full pl-10 pr-4 py-4 text-lg sm:text-xl bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="name@example.com">
@@ -85,35 +91,43 @@ export type User = z.infer<typeof UserSchema>;
           </div>
 
           <div>
-            <label class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('login.password') }}</label>
+            <label for="register-password" class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('login.password') }}</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fa-solid fa-lock text-slate-400 dark:text-slate-500 text-lg"></i>
               </div>
               <input 
-                [type]="showPassword ? 'text' : 'password'" 
+                id="register-password"
+                [type]="showPassword ? 'text' : 'password'"
                 [(ngModel)]="password" 
                 name="password"
+                autocomplete="new-password"
                 required
-                class="w-full pl-10 pr-12 py-4 text-lg sm:text-xl bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-900 dark:text-white placeholder-slate-450 dark:placeholder-slate-500 outline-none shadow-sm dark:shadow-none"
+                class="w-full pl-10 pr-16 py-4 text-lg sm:text-xl bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="••••••••">
-              <button 
+              <button
                 type="button"
                 (click)="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 outline-none border-none bg-transparent cursor-pointer z-10 text-lg">
-                <i class="fa-solid" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'"></i>
+                [attr.aria-label]="showPassword ? i18n.t('accessibility.hidePassword') : i18n.t('accessibility.showPassword')"
+                [attr.aria-pressed]="showPassword"
+                class="absolute right-1 top-1/2 -translate-y-1/2 w-12 h-12 rounded-lg text-slate-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-white focus-visible:outline-none">
+                <i class="fa-solid" [ngClass]="showPassword ? 'fa-eye-slash' : 'fa-eye'" aria-hidden="true"></i>
               </button>
             </div>
           </div>
 
-          <div *ngIf="error" class="text-rose-500 dark:text-rose-400 text-base bg-rose-50 dark:bg-rose-500/10 p-4 rounded-lg border border-rose-200 dark:border-rose-500/20 flex items-center transition-colors duration-300">
-            <i class="fa-solid fa-circle-exclamation mr-2 text-lg"></i> {{ error }}
+          <div *ngIf="error" role="alert" class="text-rose-700 dark:text-rose-300 text-base bg-rose-50 dark:bg-rose-500/10 p-4 rounded-lg border border-rose-200 dark:border-rose-500/20 flex items-center transition-colors duration-300">
+            <i class="fa-solid fa-circle-exclamation mr-2 text-lg" aria-hidden="true"></i> {{ error }}
+          </div>
+
+          <div *ngIf="notice" role="status" class="text-emerald-800 dark:text-emerald-200 text-base bg-emerald-50 dark:bg-emerald-500/10 p-4 rounded-lg border border-emerald-200 dark:border-emerald-500/20 flex items-center transition-colors duration-300">
+            <i class="fa-solid fa-envelope-circle-check mr-2 text-lg" aria-hidden="true"></i> {{ notice }}
           </div>
 
           <button 
             type="submit" 
             [disabled]="loading"
-            class="w-full min-h-[58px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xl rounded-xl transition-colors duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-2">
+            class="w-full min-h-[58px] bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xl rounded-xl transition-colors duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-2">
             <i *ngIf="loading" class="fa-solid fa-spinner fa-spin mr-2"></i>
             {{ loading ? i18n.t('register.loading') : i18n.t('register.submit') }}
           </button>
@@ -121,7 +135,7 @@ export type User = z.infer<typeof UserSchema>;
 
         <div class="mt-6 text-center text-lg text-slate-600 dark:text-slate-300 relative z-10 transition-colors duration-300">
           {{ i18n.t('register.hasAccount') }} 
-          <a routerLink="/login" class="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-white font-bold transition-colors">{{ i18n.t('register.signIn') }}</a>
+          <a routerLink="/login" class="inline-flex min-h-12 items-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-white font-bold transition-colors">{{ i18n.t('register.signIn') }}</a>
         </div>
       </div>
     </div>
@@ -132,10 +146,11 @@ export class RegisterComponent {
   lastName = '';
   email = '';
   password = '';
-  showPassword = false;
-  role: 'user' | 'doctor' = 'user';
+  role: 'user' = 'user';
   loading = false;
   error = '';
+  notice = '';
+  showPassword = false;
   public i18n = inject(I18nService);
 
   constructor(private supabase: SupabaseService, private router: Router) {}
@@ -146,7 +161,7 @@ export class RegisterComponent {
       lastName: this.lastName,
       email: this.email,
       password: this.password,
-      role: this.role
+      role: 'user'
     });
 
     if (!validationResult.success) {
@@ -157,24 +172,33 @@ export class RegisterComponent {
     
     this.loading = true;
     this.error = '';
+    this.notice = '';
 
     try {
       const { data, error } = await this.supabase.signUp(this.email, this.password, {
         first_name: this.firstName,
         last_name: this.lastName,
-        role: this.role
+        role: 'user'
       });
       
       if (error) throw error;
       
-      if (data.user) {
+      // Supabase returns a user without a session when email confirmation is
+      // required. The user is not authenticated in that state, so an insert
+      // into the RLS-protected patients table would fail and must be deferred.
+      if (!data.session) {
+        this.notice = this.i18n.t('register.confirmEmail');
+        return;
+      }
+
+      if (data.user && data.session.user.id === data.user.id) {
          const { error: dbError } = await this.supabase.client
            .from('patients')
            .insert([{
              id: data.user.id,
              first_name: this.firstName,
              last_name: this.lastName,
-             role: this.role
+             role: 'user'
            }]);
            
          if (dbError) {
@@ -184,9 +208,20 @@ export class RegisterComponent {
       
       this.router.navigate(['/dashboard']);
     } catch (e: any) {
-      this.error = e.message;
+      this.error = this.friendlyError(e);
     } finally {
       this.loading = false;
     }
+  }
+
+  private friendlyError(error: unknown): string {
+    const message = String((error as { message?: string })?.message ?? '').toLowerCase();
+    if (message.includes('already registered') || message.includes('already been registered')) {
+      return this.i18n.t('error.emailInUse');
+    }
+    if (message.includes('network') || message.includes('fetch')) {
+      return this.i18n.t('error.network');
+    }
+    return this.i18n.t('error.generic');
   }
 }

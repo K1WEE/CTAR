@@ -1,156 +1,89 @@
 import { Injectable } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 
+export type TaskProvisionResult =
+  | { status: 'already_exists' | 'ready'; taskCount: number }
+  | {
+      status:
+        | 'patient_tasks_unavailable'
+        | 'catalogue_unavailable'
+        | 'catalogue_empty';
+      message: string;
+    };
+
 @Injectable({ providedIn: 'root' })
 export class TaskService {
   constructor(private supabase: SupabaseService) {}
 
   // =========================================
-  // เรียกตอนเปิดแอป — สร้าง task ถ้ายังไม่มี
+  // เรียกตอนเปิดแอป — ผูก catalogue task ที่ staff เตรียมไว้กับผู้ใช้
   // =========================================
 
-  async createAdaptiveTasksIfNeeded(patientId: string) {
+  async createAdaptiveTasksIfNeeded(patientId: string): Promise<TaskProvisionResult> {
     const weekStart = this.getWeekStart();
-    const lastWeekStart = this.getLastWeekStart();
 
     // เช็คว่าสัปดาห์นี้มี task แล้วหรือยัง
-    const { data: existing } = await this.supabase.client
+    const { data: existing, error: existingError } = await this.supabase.client
       .from('patient_tasks')
       .select('id')
       .eq('patient_id', patientId)
       .eq('week_start', weekStart)
       .limit(1);
 
-    if (existing?.length) return;
+    if (existingError) {
+      console.error('Unable to read patient tasks:', existingError);
+      return {
+        status: 'patient_tasks_unavailable',
+        message: 'ยังโหลดภารกิจของคุณไม่ได้ กรุณาลองใหม่อีกครั้ง',
+      };
+    }
 
-    // ดึง sessions สัปดาห์ที่แล้ว
-    const { data: lastSessions } = await this.supabase.client
-      .from('sessions')
-      .select('max_force, duration_seconds')
-      .eq('patient_id', patientId)
-      .gte('session_date', lastWeekStart)
-      .lt('session_date', weekStart);
+    if (existing?.length) {
+      return { status: 'already_exists', taskCount: existing.length };
+    }
 
-    // ดึง task targets สัปดาห์ที่แล้ว
-    const { data: lastWeekTasks } = await this.supabase.client
-      .from('patient_tasks')
-      .select(
-        `
-        progress,
-        weekly_tasks ( title, target )
-      `,
-      )
-      .eq('patient_id', patientId)
-      .eq('week_start', lastWeekStart);
-
-    const lastTask = (title: string) =>
-      (lastWeekTasks as any[])?.find((t) => t.weekly_tasks.title === title);
-
-    const isFirstWeek = !lastWeekTasks?.length;
-
-    // performance สัปดาห์ที่แล้ว
-    const sessionCount = lastSessions?.length || 0;
-    const maxForce = lastSessions?.length
-      ? Math.max(...lastSessions.map((s) => s.max_force))
-      : 30;
-    const totalMinutes = lastSessions?.length
-      ? lastSessions.reduce((sum, s) => sum + s.duration_seconds, 0) / 60
-      : 10;
-
-    // คำนวณ target ใหม่
-    const newSessionTarget = isFirstWeek
-      ? 3
-      : this.calculateAdaptiveTarget(
-          lastTask('นักสู้ CTAR')?.weekly_tasks.target ?? 3,
-          sessionCount,
-          1,
-          7,
-        );
-
-    const newForceTarget = isFirstWeek
-      ? 30
-      : this.calculateAdaptiveTarget(
-          lastTask('พลังคอสุดแกร่ง')?.weekly_tasks.target ?? 30,
-          maxForce,
-          10,
-          80,
-        );
-
-    const newDurationTarget = isFirstWeek
-      ? 10
-      : this.calculateAdaptiveTarget(
-          lastTask('สายอึด')?.weekly_tasks.target ?? 10,
-          totalMinutes,
-          5,
-          60,
-        );
-
-    // สร้าง weekly_tasks
-    let tasksForWeek: any[] = [];
-
-    // เช็ค weekly_tasks ของสัปดาห์นี้
-    const { data: existingWeeklyTasks } = await this.supabase.client
+    // weekly_tasks เป็น shared catalogue ที่ staff จัดเตรียมไว้ล่วงหน้า
+    // patient อ่านได้ตาม SELECT policy แต่ไม่มีสิทธิ์ INSERT/UPDATE/DELETE
+    const { data: existingWeeklyTasks, error: catalogueError } = await this.supabase.client
       .from('weekly_tasks')
       .select('id, title')
       .eq('week_start', weekStart);
 
-    // ถ้ายังไม่มี → สร้างใหม่
-    if (!existingWeeklyTasks?.length) {
-      const { data: createdTasks } = await this.supabase.client
-        .from('weekly_tasks')
-        .insert([
-          {
-            week_start: weekStart,
-            title: 'นักสู้ CTAR',
-            description: `ฝึกให้ครบ ${newSessionTarget} sessions`,
-            icon: 'fa-medal',
-            target: newSessionTarget,
-            reward: 4,
-          },
-          {
-            week_start: weekStart,
-            title: 'พลังคอสุดแกร่ง',
-            description: `ทำแรงกดให้ถึง ${newForceTarget}N`,
-            icon: 'fa-dumbbell',
-            target: newForceTarget,
-            reward: 3,
-          },
-          {
-            week_start: weekStart,
-            title: 'สายอึด',
-            description: `ฝึกครบ ${newDurationTarget} นาที`,
-            icon: 'fa-clock',
-            target: newDurationTarget,
-            reward: 2,
-          },
-          {
-            week_start: weekStart,
-            title: 'นักฝึกต่อเนื่อง',
-            description: 'ฝึกติดต่อกัน 3 วัน',
-            icon: 'fa-fire',
-            target: 3,
-            reward: 5,
-          },
-        ])
-        .select('id');
-
-      tasksForWeek = createdTasks || [];
-    } else {
-      // มีอยู่แล้ว → ใช้อันเดิม
-      tasksForWeek = existingWeeklyTasks;
+    if (catalogueError) {
+      console.error('Unable to read weekly task catalogue:', catalogueError);
+      return {
+        status: 'catalogue_unavailable',
+        message: 'ยังโหลดภารกิจประจำสัปดาห์ไม่ได้ กรุณาลองใหม่อีกครั้ง',
+      };
     }
 
-    // ไม่มี task จริง ๆ
-    if (!tasksForWeek.length) return;
+    if (!existingWeeklyTasks?.length) {
+      return {
+        status: 'catalogue_empty',
+        message: 'ภารกิจประจำสัปดาห์ยังไม่พร้อม กรุณากลับมาลองใหม่ภายหลัง',
+      };
+    }
 
     // สร้าง patient_tasks ของ user นี้
-    await this.supabase.client.from('patient_tasks').insert(
-      tasksForWeek.map((t) => ({
+    const { error: patientTasksError } = await this.supabase.client
+      .from('patient_tasks')
+      .insert(
+        existingWeeklyTasks.map((t) => ({
         patient_id: patientId,
         task_id: t.id,
         week_start: weekStart,
-      })),
-    );
+        })),
+      );
+
+    if (patientTasksError) {
+      console.error('Unable to assign weekly tasks:', patientTasksError);
+      return {
+        status: 'patient_tasks_unavailable',
+        message: 'ยังเปิดภารกิจประจำสัปดาห์ไม่ได้ กรุณาลองใหม่อีกครั้ง',
+      };
+    }
+
+    return { status: 'ready', taskCount: existingWeeklyTasks.length };
   }
 
   // =========================================
@@ -227,12 +160,15 @@ export class TaskService {
       }
 
       const completed = newProgress >= weeklyTask.target;
+      const newlyCompleted = completed && !task.completed;
 
-      updates.push({ id: task.id, progress: newProgress, completed });
-
-      if (completed && !task.completed) {
-        starRewards.push(weeklyTask.reward);
-      }
+      updates.push({
+        id: task.id,
+        taskId: weeklyTask.id,
+        progress: newProgress,
+        completed,
+        newlyCompleted
+      });
     }
 
     // Batch update
@@ -245,35 +181,24 @@ export class TaskService {
       ),
     );
 
-    // Atomic stars
-    const totalNewStars = starRewards.reduce((sum, r) => sum + r, 0);
-    if (totalNewStars > 0) {
-      await this.supabase.client.rpc('add_stars', {
-        patient_id: patientId,
-        amount: totalNewStars,
-      });
+    // Secure atomic stars claim via claim_task_reward RPC
+    for (const u of updates) {
+      if (u.newlyCompleted) {
+        try {
+          await this.supabase.client.rpc('claim_task_reward', {
+            p_patient_id: patientId,
+            p_task_id: u.taskId,
+          });
+        } catch (err) {
+          console.warn('claim_task_reward error:', err);
+        }
+      }
     }
   }
 
   // =========================================
   // Helpers
   // =========================================
-
-  private calculateAdaptiveTarget(
-    lastTarget: number,
-    lastActual: number,
-    min: number,
-    max: number,
-  ): number {
-    const performance = lastActual / lastTarget;
-    let newTarget: number;
-
-    if (performance >= 1.0) newTarget = Math.round(lastTarget * 1.1);
-    else if (performance >= 0.8) newTarget = lastTarget;
-    else newTarget = Math.round(lastTarget * 0.9);
-
-    return Math.min(Math.max(newTarget, min), max);
-  }
 
   private calculateStreak(sessions: { session_date: string }[]): number {
     if (!sessions.length) return 0;
@@ -295,12 +220,6 @@ export class TaskService {
 
   private getWeekStart(): string {
     return this.getMondayOf(new Date());
-  }
-
-  private getLastWeekStart(): string {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return this.getMondayOf(d);
   }
 
   private getMondayOf(date: Date): string {

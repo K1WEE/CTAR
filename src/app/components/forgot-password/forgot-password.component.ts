@@ -14,7 +14,7 @@ import { I18nService } from '../../services/i18n.service';
       <div class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl shadow-md p-8 w-full max-w-md relative overflow-hidden transition-colors duration-300">
         <!-- Language toggle -->
         <div class="flex justify-end mb-2 relative z-10">
-          <button (click)="i18n.toggleLang()" class="text-base font-semibold px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors border border-slate-200 dark:border-slate-700">
+          <button (click)="i18n.toggleLang()" class="min-h-12 text-base font-semibold px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-brand-accent transition-colors border border-slate-200 dark:border-slate-700">
             {{ i18n.currentLang() === 'th' ? 'EN' : 'TH' }}
           </button>
         </div>
@@ -29,23 +29,25 @@ import { I18nService } from '../../services/i18n.service';
 
         <form *ngIf="!success" (ngSubmit)="onSubmit()" class="space-y-6 relative z-10">
           <div>
-            <label class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('login.email') }}</label>
+            <label for="forgot-email" class="block text-lg sm:text-xl font-bold text-slate-700 dark:text-slate-300 mb-2 transition-colors duration-300">{{ i18n.t('login.email') }}</label>
             <div class="relative">
               <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <i class="fa-regular fa-envelope text-slate-400 dark:text-slate-500 text-lg"></i>
               </div>
               <input 
+                id="forgot-email"
                 type="email" 
                 [(ngModel)]="email" 
                 name="email"
+                autocomplete="email"
                 required
                 class="w-full pl-10 pr-4 py-4 text-lg sm:text-xl bg-white dark:bg-slate-900/50 border border-slate-300 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-brand-accent focus:border-brand-accent transition-all text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 outline-none shadow-sm dark:shadow-none"
                 placeholder="name@example.com">
             </div>
           </div>
 
-          <div *ngIf="error" class="text-rose-500 dark:text-rose-400 text-base bg-rose-50 dark:bg-rose-500/10 p-4 rounded-lg border border-rose-200 dark:border-rose-500/20 flex items-center transition-colors duration-300">
-            <i class="fa-solid fa-circle-exclamation mr-2 text-lg"></i> {{ error }}
+          <div *ngIf="error" role="alert" class="text-rose-700 dark:text-rose-300 text-base bg-rose-50 dark:bg-rose-500/10 p-4 rounded-lg border border-rose-200 dark:border-rose-500/20 flex items-center transition-colors duration-300">
+            <i class="fa-solid fa-circle-exclamation mr-2 text-lg" aria-hidden="true"></i> {{ error }}
           </div>
 
           <button 
@@ -65,8 +67,8 @@ import { I18nService } from '../../services/i18n.service';
         </div>
 
         <div class="mt-6 text-center text-lg relative z-10 transition-colors duration-300">
-          <a routerLink="/login" class="text-brand-accent hover:text-blue-700 dark:hover:text-white font-bold transition-colors">
-            <i class="fa-solid fa-arrow-left mr-1.5 text-sm"></i>{{ i18n.t('forgot.back') }}
+          <a routerLink="/login" class="inline-flex min-h-12 items-center text-lg text-brand-accent hover:text-blue-700 dark:hover:text-white font-bold transition-colors">
+            <i class="fa-solid fa-arrow-left mr-1.5 text-sm" aria-hidden="true"></i>{{ i18n.t('forgot.back') }}
           </a>
         </div>
       </div>
@@ -94,9 +96,17 @@ export class ForgotPasswordComponent {
       if (error) throw error;
       this.success = true;
     } catch (e: any) {
-      this.error = e.message;
+      this.error = this.friendlyError(e);
     } finally {
       this.loading = false;
     }
+  }
+
+  private friendlyError(error: unknown): string {
+    const message = String((error as { message?: string })?.message ?? '').toLowerCase();
+    if (message.includes('network') || message.includes('fetch')) {
+      return this.i18n.t('error.network');
+    }
+    return this.i18n.t('error.generic');
   }
 }

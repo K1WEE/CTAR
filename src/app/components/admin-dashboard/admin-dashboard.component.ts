@@ -126,10 +126,7 @@ export class AdminDashboardComponent implements OnInit {
     
     this.updatingId = userId;
     try {
-      const { error } = await this.supabase.client
-        .from('patients')
-        .update({ role: newRole })
-        .eq('id', userId);
+      const { error } = await this.supabase.adminSetUserRole(userId, newRole);
         
       if (error) throw error;
       

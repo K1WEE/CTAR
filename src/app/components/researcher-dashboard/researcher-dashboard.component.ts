@@ -64,7 +64,7 @@ import { ThemeService } from '../../services/theme.service';
                 <button (click)="viewStaticChart(s)" class="text-indigo-600 dark:text-indigo-300 hover:text-white px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-500 border border-indigo-200 dark:border-indigo-500/30 hover:border-indigo-500 rounded-lg shadow-sm transition-all duration-300 text-xs font-bold flex items-center gap-1">
                   <i class="fa-solid fa-chart-line"></i> View
                 </button>
-                <button (click)="openDownloadModal(s)" class="text-slate-600 dark:text-slate-300 hover:text-white px-3 py-1.5 bg-slate-100 dark:bg-slate-700/50 hover:bg-emerald-500 border border-slate-200 dark:border-slate-600 hover:border-emerald-500 rounded-lg shadow-sm transition-all duration-300 text-xs font-bold flex items-center gap-1">
+                <button (click)="openDownloadModal(s)" class="text-slate-600 dark:text-slate-300 hover:text-white px-3 py-1.5 bg-slate-100 dark:bg-slate-700/50 hover:bg-emerald-700 border border-slate-200 dark:border-slate-600 hover:border-emerald-700 rounded-lg shadow-sm transition-all duration-300 text-xs font-bold flex items-center gap-1">
                   <i class="fa-solid fa-download"></i> CSV
                 </button>
               </td>

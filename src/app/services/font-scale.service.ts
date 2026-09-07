@@ -5,6 +5,8 @@ export type FontScale = 'normal' | 'large' | 'xlarge';
 const FONT_SCALE_PERCENT: Record<FontScale, number> = {
   normal: 100,
   large: 112.5,
+  // 125% keeps the largest preset readable without scaling game spacing
+  // and controls past the width of a small phone.
   xlarge: 125,
 };
 
@@ -38,6 +40,7 @@ export class FontScaleService {
   private applyScale(scale: FontScale): void {
     if (typeof document !== 'undefined') {
       document.documentElement.style.fontSize = `${this.scalePercent(scale)}%`;
+      document.documentElement.dataset['fontScale'] = scale;
     }
   }
 }

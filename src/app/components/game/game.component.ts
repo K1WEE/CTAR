@@ -13,7 +13,7 @@ import { DataSyncService } from '../../services/data-sync.service';
   imports: [CommonModule, ZenBalloonComponent],
   template: `
     <div class="game-layout-root h-screen max-h-screen overflow-hidden flex flex-col relative z-10 text-slate-800 dark:text-slate-200 p-3 sm:p-4 md:p-6 lg:p-8 bg-slate-50 dark:bg-slate-950">
-      <div class="max-w-[460px] mx-auto w-full h-full flex flex-col min-h-0 justify-center">
+      <div class="game-content max-w-[460px] mx-auto w-full h-full flex flex-col min-h-0 justify-center">
         <app-zen-balloon 
           class="w-full h-full block min-h-0"
           [currentForce]="ctar.currentForce" 
@@ -32,6 +32,19 @@ import { DataSyncService } from '../../services/data-sync.service';
       .game-layout-root {
         padding: 0.5rem !important;
       }
+    }
+
+    /* Keep the track usable at every font size; short screens can scroll. */
+    .game-layout-root {
+      height: auto;
+      min-height: 100dvh;
+      max-height: none;
+      overflow-y: auto;
+    }
+
+    .game-content {
+      height: auto;
+      min-height: calc(100dvh - 1rem);
     }
   `]
 })
@@ -85,7 +98,11 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   onGameRep() {
-    this.ctar.repCount.update((count: number) => count + 1);
+    // ZenBalloon emits only after a complete hold + release cycle. Ignore a
+    // duplicate completion event or anything arriving after the target is met.
+    if (this.sessionEnding || this.ctar.repCount() >= this.targetReps()) return;
+
+    this.ctar.repCount.update((count: number) => Math.min(count + 1, this.targetReps()));
   }
 
   finishSession() {

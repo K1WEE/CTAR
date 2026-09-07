@@ -29,9 +29,9 @@ import { calibrationStepForState } from './calibrate-flow';
     ]),
   ],
   template: `
-    <div class="min-h-screen flex flex-col items-center justify-center p-3 sm:p-6 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      <!-- max-w-md on mobile expands the card's readability. min-h-[82vh] reduces vertical negative space on phone viewports -->
-      <div [@.disabled]="prefersReducedMotion" class="calibrate-card w-full max-w-md min-h-[82vh] sm:min-h-0 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200 dark:border-slate-700 text-center relative overflow-hidden transition-colors duration-300 flex flex-col justify-between scrollbar-thin">
+    <div class="min-h-screen flex flex-col items-center justify-start sm:justify-center p-3 sm:p-6 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 overflow-y-auto">
+      <!-- Keep the instructions available on short phones; the page may scroll instead of clipping the flow. -->
+      <div [@.disabled]="prefersReducedMotion" class="calibrate-card my-3 sm:my-0 w-full max-w-md min-h-[82vh] sm:min-h-0 bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200 dark:border-slate-700 text-center relative transition-colors duration-300 flex flex-col justify-between scrollbar-thin">
         
         <!-- Header Actions -->
         <div class="flex items-center justify-between mb-4 shrink-0 relative z-10">
@@ -114,6 +114,12 @@ import { calibrationStepForState } from './calibrate-flow';
             <span>{{ i18n.currentLang() === 'th' ? 'ยังไม่พบแรงกดจากอุปกรณ์ ลองตรวจสอบว่าสวมอุปกรณ์ถูกต้อง หรือกดคางลงอีกครั้ง' : 'No force detected yet. Check the device is positioned correctly, then press your chin down again.' }}</span>
           </div>
 
+          <div *ngIf="calibrationError()" @panelSwap role="alert"
+               class="mt-1 mb-2 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 p-3 rounded-xl text-left text-sm font-bold w-full flex items-start gap-2">
+            <i class="fa-solid fa-triangle-exclamation text-base mt-0.5 shrink-0" aria-hidden="true"></i>
+            <span>{{ i18n.currentLang() === 'th' ? 'ยังวัดแรงกดไม่ได้ กรุณากดค้างให้แรงขึ้น แล้วลองปรับตั้งค่าใหม่' : 'No usable press was measured. Press and hold harder, then try calibration again.' }}</span>
+          </div>
+
           <!-- PULLING PANEL: Active Strength Test (demo SVG lives in the persistent anchor above) -->
           <div *ngIf="state() === 'pulling'" @panelSwap class="flex flex-col items-center w-full">
 
@@ -194,8 +200,8 @@ import { calibrationStepForState } from './calibrate-flow';
               (touchend)="setMockSqueezing(false)"
               class="px-6 min-h-[58px] w-full bg-gradient-to-r text-white font-black rounded-2xl shadow-md transition-all duration-300 select-none cursor-pointer flex items-center justify-center text-lg border-0 focus:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
               [ngClass]="state() === 'pulling'
-                ? 'from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 focus-visible:ring-rose-300'
-                : 'from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 focus-visible:ring-amber-300'">
+                ? 'from-rose-700 to-orange-700 hover:from-rose-800 hover:to-orange-800 focus-visible:ring-rose-300'
+                : 'from-amber-700 to-orange-700 hover:from-amber-800 hover:to-orange-800 focus-visible:ring-amber-300'">
               <i class="fa-solid fa-circle-chevron-down mr-2 text-lg"></i>
               {{ state() === 'pulling'
                 ? (i18n.currentLang() === 'th' ? 'กดค้างไว้ต่อเนื่อง...' : 'Keep holding...')
@@ -207,7 +213,7 @@ import { calibrationStepForState } from './calibrate-flow';
           <div *ngIf="state() === 'finished'" @panelSwap class="w-full pt-1.5 flex flex-col gap-2.5">
             <button
               (click)="goToGame()"
-              class="px-6 min-h-[58px] w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black rounded-2xl shadow-md transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-xl border-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
+              class="px-6 min-h-[58px] w-full bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-800 hover:to-teal-800 text-white font-black rounded-2xl shadow-md transition-all duration-300 transform hover:scale-[1.01] active:scale-[0.99] text-xl border-0 cursor-pointer focus:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900">
               {{ i18n.currentLang() === 'th' ? 'เริ่มเล่นเกม →' : 'Start Game →' }}
             </button>
             <div *ngIf="autoNavCountdown() !== null" class="flex items-center justify-center gap-3" role="status" aria-live="polite">
@@ -248,9 +254,6 @@ import { calibrationStepForState } from './calibrate-flow';
         padding: 0.75rem !important;
         gap: 0.25rem !important;
       }
-      .steps-block > div {
-        font-size: 0.95rem !important;
-      }
       .steps-block span.rounded-full {
         width: 1.5rem !important;
         height: 1.5rem !important;
@@ -274,18 +277,12 @@ import { calibrationStepForState } from './calibrate-flow';
       .steps-block {
         padding: 0.5rem 0.75rem !important;
       }
-      .steps-block > div {
-        font-size: 0.9rem !important;
-      }
       .text-7xl {
         font-size: 3.5rem !important;
       }
     }
 
     @media (max-height: 640px) {
-      .steps-block {
-        display: none !important;
-      }
       ::ng-deep .chin-tuck-svg {
         max-width: 90px !important;
       }
@@ -300,12 +297,17 @@ export class CalibrateComponent implements OnInit, OnDestroy {
   public showWaitingHint = signal<boolean>(false);
   public peaks: number[] = [];
   public averagePeak = 0;
+  public calibrationError = signal(false);
   public disconnectWarning = false;
 
   private timer: any;
   private autoNavTimer: any;
   private waitingHintTimer: any;
   private introTimer: any;
+  // Every calibration run gets its own generation. A queued interval callback
+  // from an invalidated run must never be allowed to finish a later run.
+  private calibrationAttempt = 0;
+  private destroyed = false;
   // Timestamp when force first crossed the 5N threshold; the test only starts
   // after the press is sustained, so a brief accidental spike can't trigger it
   private thresholdHoldStart: number | null = null;
@@ -345,6 +347,7 @@ export class CalibrateComponent implements OnInit, OnDestroy {
         }
       } else {
         if (this.state() === 'waiting' || this.state() === 'pulling') {
+          this.invalidateCalibrationAttempt();
           this.disconnectWarning = true;
           this.playVoice('cue_disconnected.mp3');
         }
@@ -449,6 +452,24 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     this.bleService.setMockSqueezing(squeezing);
   }
 
+  private invalidateCalibrationAttempt(): void {
+    this.calibrationAttempt += 1;
+    this.thresholdHoldStart = null;
+    this.peaks = [];
+    this.timeLeft.set(3);
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  private isCalibrationAttemptActive(attempt: number): boolean {
+    return !this.destroyed
+      && attempt === this.calibrationAttempt
+      && this.state() === 'pulling'
+      && this.bleService.connectionState() === 'Connected';
+  }
+
   friendlyError(error: string | null): string {
     if (!error) return '';
     const lower = error.toLowerCase();
@@ -472,7 +493,8 @@ export class CalibrateComponent implements OnInit, OnDestroy {
       this.activeAudio = null;
     }
 
-    const lang = this.i18n.currentLang();
+    const lang = this.i18n.voiceLanguage();
+    if (!lang) return;
     const audio = new Audio(`/assets/audio/${lang}/${filename}`);
     this.activeAudio = audio;
 
@@ -491,11 +513,19 @@ export class CalibrateComponent implements OnInit, OnDestroy {
   }
 
   beginCalibration() {
+    if (this.destroyed
+      || this.state() !== 'waiting'
+      || this.bleService.connectionState() !== 'Connected') {
+      return;
+    }
+
+    const attempt = ++this.calibrationAttempt;
     console.log('CTAR: Calibration threshold met. Starting...');
     // Voice + haptics announce the start so it registers even with eyes off-screen
     this.playVoice('cue_hold.mp3');
     this.biofeedback.vibrate([80, 50, 80]);
     this.state.set('pulling');
+    this.calibrationError.set(false);
     this.timeLeft.set(3); // Timer resets to 3s instead of 5s
     this.ctar.peakForce.set(0); 
     this.peaks = [];
@@ -503,33 +533,60 @@ export class CalibrateComponent implements OnInit, OnDestroy {
     // Clear existing timer if any
     if (this.timer) {
       clearInterval(this.timer);
+      this.timer = null;
     }
 
     // Wrap in ngZone.run() to ensure async setInterval triggers change detection
-    this.timer = setInterval(() => {
+    const timer = setInterval(() => {
+      if (!this.isCalibrationAttemptActive(attempt)) {
+        clearInterval(timer);
+        if (this.timer === timer) this.timer = null;
+        return;
+      }
       this.ngZone.run(() => {
+        if (!this.isCalibrationAttemptActive(attempt)) {
+          clearInterval(timer);
+          if (this.timer === timer) this.timer = null;
+          return;
+        }
         const time = this.timeLeft();
         console.log('CTAR: Timer tick. Remaining:', time - 1);
         if (time <= 1) {
-          clearInterval(this.timer);
+          clearInterval(timer);
+          if (this.timer === timer) this.timer = null;
           this.peaks.push(this.ctar.peakForce());
-          this.finishCalibration();
+          this.finishCalibration(attempt);
         } else {
           this.timeLeft.set(time - 1);
         }
       });
     }, 1000);
+    this.timer = timer;
   }
 
-  finishCalibration() {
+  finishCalibration(attempt = this.calibrationAttempt) {
+    if (!this.isCalibrationAttemptActive(attempt)) {
+      return;
+    }
     console.log('CTAR: Completing calibration...');
+    const measuredPeak = this.peaks.length > 0 ? this.peaks[0] : this.ctar.peakForce();
+
+    // Keep the measured value intact. A zero/non-finite peak means the sensor
+    // did not produce a usable calibration sample; inventing a 10N minimum
+    // would make every later game target inaccurate for a low-force patient.
+    if (!Number.isFinite(measuredPeak) || measuredPeak <= 0) {
+      this.averagePeak = 0;
+      this.calibrationError.set(true);
+      this.state.set('waiting');
+      return;
+    }
+
     // "Release, done, ready to start" gives the user control over the next step.
     this.playVoice('cue_calibrate_done.mp3');
     this.biofeedback.playHoldComplete();
     this.state.set('finished');
-    this.averagePeak = this.peaks.length > 0 ? this.peaks[0] : this.ctar.peakForce();
-    const safeMax = Math.max(10, this.averagePeak);
-    this.ctar.setCalibration(safeMax);
+    this.averagePeak = measuredPeak;
+    this.ctar.setCalibration(measuredPeak);
 
     if (this.autoNavTimer) {
       clearInterval(this.autoNavTimer);
@@ -565,12 +622,9 @@ export class CalibrateComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    if (this.timer) {
-      clearInterval(this.timer);
-    }
-    if (this.autoNavTimer) {
-      clearInterval(this.autoNavTimer);
-    }
+    this.destroyed = true;
+    this.invalidateCalibrationAttempt();
+    this.cancelAutoNav();
     if (this.waitingHintTimer) {
       clearTimeout(this.waitingHintTimer);
     }
@@ -585,8 +639,8 @@ export class CalibrateComponent implements OnInit, OnDestroy {
 
   goBack() {
     const currentState = this.state();
+    this.invalidateCalibrationAttempt();
     if (currentState === 'waiting' || currentState === 'pulling' || currentState === 'finished') {
-      if (this.timer) clearInterval(this.timer);
       this.cancelAutoNav();
       this.state.set(this.bleService.connectionState() === 'Connected' ? 'waiting' : 'intro');
       this.disconnectWarning = false;

@@ -123,7 +123,7 @@ import { FontScaleControlComponent } from '../../font-scale-control/font-scale-c
                      [ngClass]="{
                        'bg-slate-50 dark:bg-slate-800/20 border-slate-100 dark:border-white/5 text-slate-400 dark:text-slate-600': day.count === 0,
                        'bg-emerald-100 dark:bg-emerald-950/50 border-emerald-300/30 text-emerald-800 dark:text-emerald-300': day.count === 1,
-                       'bg-emerald-500 dark:bg-emerald-500 border-emerald-600 text-white shadow-emerald-500/20': day.count >= 2
+                       'bg-emerald-700 dark:bg-emerald-700 border-emerald-800 text-white shadow-emerald-700/20': day.count >= 2
                      }">
                   {{ day.date.getDate() }}
                   
@@ -240,7 +240,7 @@ import { FontScaleControlComponent } from '../../font-scale-control/font-scale-c
                       <button (click)="viewChart(s)" class="text-indigo-600 dark:text-indigo-300 hover:text-white px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-500 border border-indigo-200 dark:border-indigo-500/30 rounded-lg transition-all text-xs font-bold flex items-center gap-1">
                         <i class="fa-solid fa-chart-line"></i> {{ i18n.t('detail.viewChart') }}
                       </button>
-                      <button (click)="openDownloadModal(s)" class="text-slate-600 dark:text-slate-300 hover:text-white px-3 py-1.5 bg-slate-100 dark:bg-slate-700/50 hover:bg-emerald-500 border border-slate-200 dark:border-slate-600 rounded-lg transition-all text-xs font-bold flex items-center gap-1">
+                      <button (click)="openDownloadModal(s)" class="text-slate-600 dark:text-slate-300 hover:text-white px-3 py-1.5 bg-slate-100 dark:bg-slate-700/50 hover:bg-emerald-700 border border-slate-200 dark:border-slate-600 rounded-lg transition-all text-xs font-bold flex items-center gap-1">
                         <i class="fa-solid fa-download"></i> {{ i18n.t('detail.downloadCSV') }}
                       </button>
                     </td>

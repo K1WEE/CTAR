@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { SupabaseService } from './supabase.service';
 
 export interface RawDataPoint {
@@ -17,70 +17,297 @@ export interface PatientSummary {
   last_max_force: number | null;
 }
 
+export interface OfflineSession {
+  id: string;
+  patientId: string;
+  rawData: RawDataPoint[];
+  maxForce: number;
+  avgForce: number;
+  reps: number;
+  durationSeconds: number;
+  timestamp: string;
+}
+
+export interface UploadSessionResult {
+  success: boolean;
+  isOffline?: boolean;
+  error?: string;
+  alreadyProcessed?: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class DataSyncService {
-  constructor(private supabaseService: SupabaseService) {}
+  private readonly OFFLINE_QUEUE_KEY = 'ctar_offline_sync_queue';
+  private readonly SESSION_STATE_PREFIX = 'ctar_session_state:';
+  private syncInFlight: Promise<number> | null = null;
+  public pendingSyncCount = signal<number>(0);
+
+  constructor(private supabaseService: SupabaseService) {
+    this.updatePendingCount();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', () => {
+        this.syncPendingSessions();
+      });
+      // Initial sync attempt when service loads
+      this.syncPendingSessions();
+    }
+  }
 
   private get supabase() {
     return this.supabaseService.client;
   }
 
-  /**
-   * Hybrid Architecture Uploader
-   */
-  async uploadSessionData(
-    patientId: string, 
-    rawData: RawDataPoint[], 
-    maxForce: number, 
-    avgForce: number,
-    reps: number, 
-    durationSeconds: number
-  ): Promise<boolean> {
+  private updatePendingCount() {
     try {
-      const blob = new Blob([JSON.stringify(rawData)], { type: 'application/json' });
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const fileName = `${patientId}/session_${timestamp}.json`;
+      const queue = this.getOfflineQueue();
+      this.pendingSyncCount.set(queue.length);
+    } catch {
+      this.pendingSyncCount.set(0);
+    }
+  }
 
-      const { data: uploadData, error: uploadError } = await this.supabase
-        .storage
-        .from('raw_clinical_data')
-        .upload(fileName, blob, {
-          contentType: 'application/json',
-          upsert: false
-        });
+  public getOfflineQueue(): OfflineSession[] {
+    try {
+      if (typeof localStorage === 'undefined') return [];
+      const stored = localStorage.getItem(this.OFFLINE_QUEUE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  }
 
-      if (uploadError) {
-        console.error('Storage Upload Error:', uploadError.message);
-        throw uploadError;
+  private saveOfflineSession(session: OfflineSession): boolean {
+    try {
+      const queue = this.getOfflineQueue();
+      if (queue.some(item => item.id === session.id)) {
+        this.pendingSyncCount.set(queue.length);
+        return true;
       }
-
-      const storagePath = uploadData.path;
-
-      const { error: dbError } = await this.supabase
-        .from('sessions')
-        .insert([{
-          patient_id: patientId,
-          max_force: maxForce,
-          avg_force: avgForce,
-          reps: reps,
-          duration_seconds: durationSeconds,
-          file_url: storagePath
-        }]);
-
-      if (dbError) {
-        console.error('PostgreSQL Metadata Insert Error:', dbError.message);
-        throw dbError;
-      }
-
-      console.log('Successfully synced hybrid session data & metadata.');
+      queue.push(session);
+      localStorage.setItem(this.OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+      this.pendingSyncCount.set(queue.length);
       return true;
-
-    } catch (err) {
-      console.error('Data Sync failed securely:', err);
+    } catch (e) {
+      console.error('Failed saving to offline queue:', e);
       return false;
     }
+  }
+
+  /**
+   * Internal worker to perform the storage upload and DB insert.
+   */
+  private async performUpload(
+    sessionId: string,
+    patientId: string,
+    rawData: ReadonlyArray<RawDataPoint>,
+    maxForce: number,
+    avgForce: number,
+    reps: number,
+    durationSeconds: number
+  ): Promise<boolean> {
+    const blob = new Blob([JSON.stringify(rawData)], { type: 'application/json' });
+    // The queue keeps the same id across retries. Deriving the object path
+    // from it prevents a DB failure from creating a new file on every retry.
+    const fileName = `${patientId}/session_${sessionId}.json`;
+
+    const { error: uploadError } = await this.supabase
+      .storage
+      .from('raw_clinical_data')
+      .upload(fileName, blob, {
+        contentType: 'application/json',
+        upsert: false
+      });
+
+    if (uploadError && !this.isAlreadyUploadedError(uploadError)) {
+      console.error('Storage Upload Error:', uploadError.message);
+      throw uploadError;
+    }
+
+    // A previous attempt may have completed the storage step before failing
+    // to write its metadata. The deterministic path means an "already
+    // exists" response is evidence that we can safely continue to metadata.
+    const storagePath = fileName;
+
+    const { error: dbError } = await this.supabase
+      .from('sessions')
+      .upsert([{
+        id: sessionId,
+        patient_id: patientId,
+        max_force: maxForce,
+        avg_force: avgForce,
+        reps: reps,
+        duration_seconds: durationSeconds,
+        file_url: storagePath
+      }], { onConflict: 'id', ignoreDuplicates: true });
+
+    if (dbError) {
+      console.error('PostgreSQL Metadata Insert Error:', dbError.message);
+      throw dbError;
+    }
+
+    return true;
+  }
+
+  private isAlreadyUploadedError(error: { message?: string; statusCode?: number | string }): boolean {
+    const statusCode = Number(error.statusCode);
+    return statusCode === 409 || /already exists|duplicate/i.test(error.message || '');
+  }
+
+  private getSessionStateKey(patientId: string, sessionId: string): string {
+    return `${this.SESSION_STATE_PREFIX}${patientId}:${sessionId}`;
+  }
+
+  private getSessionState(patientId: string, sessionId: string): 'queued' | 'synced' | null {
+    try {
+      if (typeof sessionStorage === 'undefined') return null;
+      const state = sessionStorage.getItem(this.getSessionStateKey(patientId, sessionId));
+      return state === 'queued' || state === 'synced' ? state : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private setSessionState(patientId: string, sessionId: string, state: 'queued' | 'synced'): void {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(this.getSessionStateKey(patientId, sessionId), state);
+      }
+    } catch {
+      // Session storage is an optimization; the offline queue remains the source of truth.
+    }
+  }
+
+  /**
+   * Hybrid Architecture Uploader with Offline Fallback.
+   * If online upload succeeds, returns { success: true }.
+   * If offline or network error occurs, queues locally and reports whether the
+   * queue write actually succeeded.
+   */
+  async uploadSessionData(
+    patientId: string,
+    rawData: ReadonlyArray<RawDataPoint>,
+    maxForce: number,
+    avgForce: number,
+    reps: number,
+    durationSeconds: number,
+    sessionId?: string
+  ): Promise<UploadSessionResult> {
+    const id = sessionId || (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : String(Date.now()));
+    const existingState = this.getSessionState(patientId, id);
+    if (existingState === 'synced') {
+      return { success: true, isOffline: false, alreadyProcessed: true };
+    }
+
+    const existingQueue = this.getOfflineQueue().some(item => item.id === id);
+    if (existingState === 'queued' || existingQueue) {
+      this.setSessionState(patientId, id, 'queued');
+      return { success: true, isOffline: true, alreadyProcessed: true };
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const offlineSession: OfflineSession = {
+      id,
+      patientId,
+      rawData: [...rawData],
+      maxForce,
+      avgForce,
+      reps,
+      durationSeconds,
+      timestamp
+    };
+
+    // Check if browser is currently offline
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      const queued = this.saveOfflineSession(offlineSession);
+      if (queued) this.setSessionState(patientId, id, 'queued');
+      return queued
+        ? { success: true, isOffline: true, alreadyProcessed: false }
+        : { success: false, isOffline: true, error: 'Failed saving session to offline queue.' };
+    }
+
+    try {
+      await this.performUpload(
+        offlineSession.id,
+        patientId,
+        rawData,
+        maxForce,
+        avgForce,
+        reps,
+        durationSeconds
+      );
+      this.setSessionState(patientId, id, 'synced');
+      console.log('Successfully synced hybrid session data & metadata.');
+      return { success: true, isOffline: false, alreadyProcessed: false };
+    } catch (err: any) {
+      console.warn('Network or server upload failed, enqueuing session offline:', err);
+      const queued = this.saveOfflineSession(offlineSession);
+      if (queued) this.setSessionState(patientId, id, 'queued');
+      return queued
+        ? { success: true, isOffline: true, alreadyProcessed: false }
+        : { success: false, isOffline: true, error: 'Failed saving session to offline queue.' };
+    }
+  }
+
+  /**
+   * Attempts to sync all queued offline sessions to Supabase.
+   */
+  async syncPendingSessions(): Promise<number> {
+    if (this.syncInFlight) return this.syncInFlight;
+
+    const syncPromise = this.syncPendingSessionsInternal();
+    this.syncInFlight = syncPromise;
+
+    try {
+      return await syncPromise;
+    } finally {
+      if (this.syncInFlight === syncPromise) this.syncInFlight = null;
+    }
+  }
+
+  private async syncPendingSessionsInternal(): Promise<number> {
+    if (typeof navigator !== 'undefined' && !navigator.onLine) return 0;
+    const queue = this.getOfflineQueue();
+    if (queue.length === 0) return 0;
+
+    let syncedCount = 0;
+    const syncedIds = new Set<string>();
+
+    for (const item of queue) {
+      try {
+        await this.performUpload(
+          item.id,
+          item.patientId,
+          item.rawData,
+          item.maxForce,
+          item.avgForce,
+          item.reps,
+          item.durationSeconds
+        );
+        this.setSessionState(item.patientId, item.id, 'synced');
+        syncedCount++;
+        syncedIds.add(item.id);
+      } catch (err) {
+        // Keep failed items in the queue for a later retry.
+      }
+    }
+
+    try {
+      // Re-read after the awaits so sessions queued while uploads were in
+      // flight are preserved. Only remove snapshot items that uploaded.
+      const currentQueue = this.getOfflineQueue();
+      const remaining = currentQueue.filter(item => !syncedIds.has(item.id));
+      localStorage.setItem(this.OFFLINE_QUEUE_KEY, JSON.stringify(remaining));
+      this.pendingSyncCount.set(remaining.length);
+    } catch (e) {
+      console.error('Failed updating offline queue:', e);
+    }
+
+    return syncedCount;
   }
 
   /**
@@ -147,44 +374,62 @@ export class DataSyncService {
 
   /**
    * Fetches patient list with aggregated session data for clinic dashboard.
+   * Optimizes performance by querying the single aggregated view first,
+   * with a batched 2-query fallback to completely eliminate N+1 latency.
    */
   async fetchPatientList(): Promise<PatientSummary[]> {
     try {
-      // Get all patients
+      // 1. Try single query using aggregated view (Instant 1-roundtrip)
+      const { data: viewData, error: vError } = await this.supabase
+        .from('clinic_patients_summary')
+        .select('*')
+        .order('first_name', { ascending: true });
+
+      if (!vError && viewData && viewData.length > 0) {
+        return viewData.map(row => ({
+          id: row.id,
+          first_name: row.first_name,
+          last_name: row.last_name,
+          role: row.role,
+          session_count: Number(row.session_count || 0),
+          last_session_date: row.last_session_date || null,
+          last_max_force: row.last_max_force !== null ? Number(row.last_max_force) : null
+        }));
+      }
+
+      // 2. Fallback: Batched 2-query fetch to eliminate N+1 loop even without the view
       const { data: patients, error: pError } = await this.supabase
         .from('patients')
         .select('id, first_name, last_name, role')
         .eq('role', 'user');
 
-      if (pError) throw pError;
-      if (!patients || patients.length === 0) return [];
+      if (pError || !patients || patients.length === 0) return [];
 
-      // Get session counts and last sessions per patient
-      const summaries: PatientSummary[] = [];
+      const { data: allSessions } = await this.supabase
+        .from('sessions')
+        .select('patient_id, session_date, max_force')
+        .order('session_date', { ascending: false });
 
-      for (const patient of patients) {
-        const { data: sessions, error: sError } = await this.supabase
-          .from('sessions')
-          .select('session_date, max_force')
-          .eq('patient_id', patient.id)
-          .order('session_date', { ascending: false });
-
-        if (sError) {
-          console.error('Error fetching sessions for', patient.id, sError);
+      const sessionsByPatient = new Map<string, any[]>();
+      (allSessions || []).forEach(s => {
+        if (!sessionsByPatient.has(s.patient_id)) {
+          sessionsByPatient.set(s.patient_id, []);
         }
+        sessionsByPatient.get(s.patient_id)!.push(s);
+      });
 
-        summaries.push({
-          id: patient.id,
-          first_name: patient.first_name,
-          last_name: patient.last_name,
-          role: patient.role,
-          session_count: sessions?.length || 0,
-          last_session_date: sessions && sessions.length > 0 ? sessions[0].session_date : null,
-          last_max_force: sessions && sessions.length > 0 ? sessions[0].max_force : null
-        });
-      }
-
-      return summaries;
+      return patients.map(p => {
+        const pSessions = sessionsByPatient.get(p.id) || [];
+        return {
+          id: p.id,
+          first_name: p.first_name,
+          last_name: p.last_name,
+          role: p.role,
+          session_count: pSessions.length,
+          last_session_date: pSessions.length > 0 ? pSessions[0].session_date : null,
+          last_max_force: pSessions.length > 0 ? pSessions[0].max_force : null
+        };
+      });
     } catch (err) {
       console.error('Failed fetching patient list:', err);
       return [];

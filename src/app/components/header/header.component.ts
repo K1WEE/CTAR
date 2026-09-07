@@ -30,7 +30,7 @@ import { FontScaleControlComponent } from '../font-scale-control/font-scale-cont
         <app-font-scale-control [inline]="true"></app-font-scale-control>
 
         <!-- Language Toggle -->
-        <button (click)="i18n.toggleLang()" class="flex-shrink-0 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-accent dark:hover:text-white border border-slate-200 dark:border-white/10 transition-all duration-300 shadow-sm text-sm font-bold">
+        <button (click)="i18n.toggleLang()" class="flex-shrink-0 min-h-12 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-accent dark:hover:text-white border border-slate-200 dark:border-white/10 transition-all duration-300 shadow-sm text-base font-bold">
           {{ i18n.currentLang() === 'th' ? 'EN' : 'TH' }}
         </button>
 
@@ -41,14 +41,14 @@ import { FontScaleControlComponent } from '../font-scale-control/font-scale-cont
           [attr.aria-expanded]="mobileMenuOpen()"
           aria-controls="header-secondary-menu"
           [attr.aria-label]="mobileMenuOpen() ? i18n.t('header.closeMenu') : i18n.t('header.openMenu')"
-          class="md:hidden flex-shrink-0 w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 shadow-sm">
+          class="md:hidden flex-shrink-0 w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10 shadow-sm">
           <i class="fa-solid" [ngClass]="mobileMenuOpen() ? 'fa-xmark' : 'fa-bars'" aria-hidden="true"></i>
         </button>
 
         <div class="hidden md:flex items-center space-x-4">
           <!-- Theme Toggle -->
-          <button (click)="themeService.toggleTheme()" class="flex-shrink-0 w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-accent dark:hover:text-white border border-slate-200 dark:border-white/10 transition-all duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent/50">
-            <i class="fa-solid" [ngClass]="themeService.isDarkMode() ? 'fa-sun' : 'fa-moon'"></i>
+          <button (click)="themeService.toggleTheme()" [attr.aria-label]="themeService.isDarkMode() ? i18n.t('header.lightMode') : i18n.t('header.darkMode')" class="flex-shrink-0 w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-brand-accent dark:hover:text-white border border-slate-200 dark:border-white/10 transition-all duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent/50">
+            <i class="fa-solid" [ngClass]="themeService.isDarkMode() ? 'fa-sun' : 'fa-moon'" aria-hidden="true"></i>
           </button>
 
           <!-- Status Indicator -->
@@ -73,15 +73,15 @@ import { FontScaleControlComponent } from '../font-scale-control/font-scale-cont
           </div>
 
           <!-- Logout Button -->
-          <button (click)="onLogout.emit()" class="flex-shrink-0 px-3 py-2 md:px-4 min-h-[44px] bg-slate-100 dark:bg-slate-800/50 hover:bg-rose-50 dark:hover:bg-rose-500/20 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-white/10 hover:border-rose-300 dark:hover:border-rose-500/50 rounded-xl transition-all shadow-sm text-sm font-medium flex items-center focus:outline-none focus:ring-2 focus:ring-rose-500/50">
-            <i class="fa-solid fa-right-from-bracket md:mr-2"></i> <span>{{ i18n.t('header.logout') }}</span>
+          <button (click)="onLogout.emit()" class="flex-shrink-0 px-3 py-2 md:px-4 min-h-12 bg-slate-100 dark:bg-slate-800/50 hover:bg-rose-50 dark:hover:bg-rose-500/20 text-slate-600 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 border border-slate-200 dark:border-white/10 hover:border-rose-300 dark:hover:border-rose-500/50 rounded-xl transition-all shadow-sm text-base font-medium flex items-center focus:outline-none focus:ring-2 focus:ring-rose-500/50">
+            <i class="fa-solid fa-right-from-bracket md:mr-2" aria-hidden="true"></i> <span>{{ i18n.t('header.logout') }}</span>
           </button>
         </div>
 
         <!-- Mobile secondary controls -->
         <div *ngIf="mobileMenuOpen()" id="header-secondary-menu" class="absolute right-0 top-14 z-40 flex min-w-[220px] flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-xl dark:border-slate-700 dark:bg-slate-900 md:hidden">
-          <button (click)="themeService.toggleTheme()" class="min-h-[44px] rounded-xl bg-slate-100 px-3 py-2 text-left text-label font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-100">
-            <i class="fa-solid mr-2" [ngClass]="themeService.isDarkMode() ? 'fa-sun' : 'fa-moon'"></i>
+          <button (click)="themeService.toggleTheme()" [attr.aria-label]="themeService.isDarkMode() ? i18n.t('header.lightMode') : i18n.t('header.darkMode')" class="min-h-12 rounded-xl bg-slate-100 px-3 py-2 text-left text-label font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-100">
+            <i class="fa-solid mr-2" [ngClass]="themeService.isDarkMode() ? 'fa-sun' : 'fa-moon'" aria-hidden="true"></i>
             {{ themeService.isDarkMode() ? i18n.t('header.lightMode') : i18n.t('header.darkMode') }}
           </button>
           <div class="rounded-xl bg-slate-100 px-3 py-2 text-label font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-100">
@@ -93,8 +93,8 @@ import { FontScaleControlComponent } from '../font-scale-control/font-scale-cont
                   }"></span>
             {{ connectionState() }}
           </div>
-          <button (click)="onLogout.emit()" class="min-h-[44px] rounded-xl bg-slate-100 px-3 py-2 text-left text-label font-bold text-rose-600 dark:bg-slate-800 dark:text-rose-400">
-            <i class="fa-solid fa-right-from-bracket mr-2"></i>{{ i18n.t('header.logout') }}
+          <button (click)="onLogout.emit()" class="min-h-12 rounded-xl bg-slate-100 px-3 py-2 text-left text-label font-bold text-rose-600 dark:bg-slate-800 dark:text-rose-400">
+            <i class="fa-solid fa-right-from-bracket mr-2" aria-hidden="true"></i>{{ i18n.t('header.logout') }}
           </button>
         </div>
       </div>

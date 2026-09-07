@@ -19,7 +19,7 @@ import { CommonModule } from '@angular/common';
       </div>
 
       <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-        <button *ngIf="!isConnected" (click)="onConnect.emit()" class="flex-1 md:flex-none px-6 py-2.5 bg-brand-accent hover:bg-brand-accent/90 text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+        <button *ngIf="!isConnected" (click)="onConnect.emit()" class="flex-1 md:flex-none px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-medium rounded-xl transition-all duration-300 shadow-[0_0_15px_rgba(29,78,216,0.3)] hover:shadow-[0_0_20px_rgba(30,64,175,0.5)]">
           <i class="fa-solid fa-link mr-2"></i> Connect
         </button>
         <button *ngIf="!isConnected && isAdmin" (click)="onSimulate.emit()" class="flex-1 md:flex-none px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded-xl transition-all duration-300 border border-slate-200">

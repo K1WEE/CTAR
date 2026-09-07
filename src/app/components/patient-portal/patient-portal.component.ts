@@ -84,6 +84,17 @@ interface SessionRecord {
             </div>
           </div>
 
+          <!-- Pending Offline Sessions Badge -->
+          <div *ngIf="dataSync.pendingSyncCount() > 0" role="status" class="bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 p-4 rounded-2xl font-bold text-sm flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-cloud-arrow-up text-amber-500 text-base" aria-hidden="true"></i>
+              <span>{{ i18n.t('portal.pendingSync').replace('{0}', dataSync.pendingSyncCount().toString()) }}</span>
+            </div>
+            <button (click)="dataSync.syncPendingSessions()" class="px-3 py-1.5 bg-amber-700 text-white rounded-xl text-xs font-extrabold shadow-sm hover:bg-amber-800 transition-colors">
+              {{ i18n.currentLang() === 'th' ? 'ซิงค์ทันที' : 'Sync Now' }}
+            </button>
+          </div>
+
           <!-- Loading placeholder: keeps the layout calm instead of empty widgets popping in -->
           <div *ngIf="isLoading()" role="status" class="bg-white dark:bg-brand-card border border-slate-200 dark:border-slate-700 rounded-3xl p-10 shadow-sm text-center">
             <i class="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-3" aria-hidden="true"></i>
@@ -114,7 +125,7 @@ interface SessionRecord {
                     <!-- Circular Indicator: date number inside, weekday letter below (no duplication) -->
                     <div role="img" [attr.aria-label]="getDayAria(day)"
                       [class]="day.completed
-                        ? 'w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-sm font-bold border-2 border-emerald-600 relative transition-transform duration-200 hover:scale-105'
+                        ? 'w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-emerald-700 text-white flex items-center justify-center shadow-sm font-bold border-2 border-emerald-800 relative transition-transform duration-200 hover:scale-105'
                         : 'w-11 h-11 sm:w-12 sm:h-12 rounded-full border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center font-semibold transition-colors'"
                     >
                       <i *ngIf="day.completed" class="fa-solid fa-check text-base sm:text-lg" aria-hidden="true"></i>
@@ -134,7 +145,7 @@ interface SessionRecord {
 
               <!-- Stats Row -->
               <div *ngIf="lastSession() as last" class="mt-6 pt-5 border-t border-slate-200 dark:border-white/5 relative z-10">
-                <div class="grid grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl text-center">
                     <span class="text-slate-600 dark:text-slate-300 font-bold text-base block mb-1">
                       {{ i18n.currentLang() === 'th' ? 'แรงกดล่าสุด' : 'Latest Force' }}
@@ -171,7 +182,7 @@ interface SessionRecord {
               <div class="md:hidden mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-center relative z-10">
                 <button
                   (click)="scrollToTasks()"
-                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-base font-extrabold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all duration-200"
+                  class="inline-flex min-h-12 items-center gap-2 px-5 py-3 rounded-xl text-base font-extrabold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95 transition-all duration-200"
                 >
                   <span>{{ i18n.currentLang() === 'th' ? 'ดูภารกิจประจำสัปดาห์ของคุณ' : 'View your weekly tasks' }}</span>
                   <i class="fa-solid fa-arrow-down text-base"></i>
@@ -200,7 +211,7 @@ export class PatientPortalComponent implements OnInit {
   public ctar = inject(CtarLogicService);
   private supabase = inject(SupabaseService);
   private router = inject(Router);
-  private dataSync = inject(DataSyncService);
+  public dataSync = inject(DataSyncService);
 
   // Compute weekly streak days (Monday to Sunday) based on language and user sessions
   public weekDays = computed(() => {

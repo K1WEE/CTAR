@@ -88,4 +88,16 @@ export class SupabaseService {
       return 'user';
     }
   }
+
+  /**
+   * Securely sets a user's role using the admin_set_user_role RPC.
+   * Only callable if currentUser has role === 'admin'.
+   */
+  async adminSetUserRole(targetUserId: string, newRole: string): Promise<{ error: any }> {
+    const { error } = await this.client.rpc('admin_set_user_role', {
+      target_user_id: targetUserId,
+      new_role: newRole
+    });
+    return { error };
+  }
 }

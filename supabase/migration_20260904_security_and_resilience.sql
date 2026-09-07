@@ -1,48 +1,9 @@
--- Supabase SQL Schema for CTAR Medical IoT
--- ----------------------------------------------------
+-- ==============================================================================
+-- CTAR Medical IoT Migration: Security Hardening & Performance Optimization
+-- Run this script in the Supabase SQL Editor to apply security and performance fixes.
+-- ==============================================================================
 
--- Step 1: Create Patients Table
-CREATE TABLE IF NOT EXISTS public.patients (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    role VARCHAR DEFAULT 'user' NOT NULL,
-    dob DATE,
-    stars INTEGER DEFAULT 0,
-    target_reps INTEGER DEFAULT 15,
-    hold_duration_ms INTEGER DEFAULT 2000,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- Step 2: Create Sessions Table (Metadata)
-CREATE TABLE IF NOT EXISTS public.sessions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE NOT NULL,
-    session_date TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
-    max_force NUMERIC(10, 2) NOT NULL DEFAULT 0.0,
-    avg_force NUMERIC(10, 2) NOT NULL DEFAULT 0.0,
-    reps INTEGER NOT NULL DEFAULT 0,
-    duration_seconds NUMERIC(10, 2) NOT NULL DEFAULT 0.0,
-    file_url TEXT NOT NULL, -- Hybrid Storage: Pointer to raw JSON/CSV in bucket
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
--- Step 3: Enable Row Level Security (RLS)
-ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sessions ENABLE ROW LEVEL SECURITY;
-
--- Helper: is the current user a doctor or admin?
--- SECURITY DEFINER so the function bypasses RLS on patients, which avoids
--- infinite recursion when patients' own policies call it.
-CREATE OR REPLACE FUNCTION public.is_staff()
-RETURNS boolean AS $$
-    SELECT EXISTS (
-        SELECT 1 FROM public.patients
-        WHERE id = auth.uid() AND role IN ('doctor', 'admin')
-    );
-$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
-
--- Helper: is the current user an admin?
+-- 1. Helper Function: is_admin()
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS boolean AS $$
     SELECT EXISTS (
@@ -51,26 +12,8 @@ RETURNS boolean AS $$
     );
 $$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 
--- ---- patients ----
--- A patient sees / edits only their own row; staff see / edit everyone.
-CREATE POLICY "patients_select_own_or_staff"
-    ON public.patients FOR SELECT
-    TO authenticated
-    USING (id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "patients_insert_self"
-    ON public.patients FOR INSERT
-    TO authenticated
-    WITH CHECK (id = auth.uid());
-
-CREATE POLICY "patients_update_own_or_staff"
-    ON public.patients FOR UPDATE
-    TO authenticated
-    USING (id = auth.uid() OR public.is_staff())
-    WITH CHECK (id = auth.uid() OR public.is_staff());
-
--- Guard against privilege escalation on registration:
--- Any public client signup inserting into patients is forced to 'user'.
+-- 2. Guard against privilege escalation on registration:
+-- Any public client signup inserting into patients is strictly forced to 'user'.
 CREATE OR REPLACE FUNCTION public.force_user_role_on_insert()
 RETURNS trigger AS $$
 BEGIN
@@ -86,7 +29,7 @@ CREATE TRIGGER trg_force_user_role_on_insert
     BEFORE INSERT ON public.patients
     FOR EACH ROW EXECUTE FUNCTION public.force_user_role_on_insert();
 
--- Guard against unauthorized role changes:
+-- 3. Guard against unauthorized role changes:
 -- Role changes are only permitted if the authenticated caller is an admin,
 -- or if executed by the service_role (auth.uid() IS NULL).
 CREATE OR REPLACE FUNCTION public.block_role_change()
@@ -106,7 +49,7 @@ CREATE TRIGGER trg_block_role_change
     BEFORE UPDATE ON public.patients
     FOR EACH ROW EXECUTE FUNCTION public.block_role_change();
 
--- Dedicated Admin RPC for changing user roles securely
+-- 4. Dedicated Admin RPC for changing user roles securely
 CREATE OR REPLACE FUNCTION public.admin_set_user_role(target_user_id UUID, new_role TEXT)
 RETURNS void AS $$
 BEGIN
@@ -128,132 +71,27 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 REVOKE EXECUTE ON FUNCTION public.admin_set_user_role(UUID, TEXT) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.admin_set_user_role(UUID, TEXT) TO authenticated;
 
--- ---- sessions ----
--- A patient reads / writes only their own sessions; staff see everyone's.
-CREATE POLICY "sessions_select_own_or_staff"
-    ON public.sessions FOR SELECT
-    TO authenticated
-    USING (patient_id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "sessions_insert_own_or_staff"
-    ON public.sessions FOR INSERT
-    TO authenticated
-    WITH CHECK (patient_id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "sessions_update_own_or_staff"
-    ON public.sessions FOR UPDATE
-    TO authenticated
-    USING (patient_id = auth.uid() OR public.is_staff())
-    WITH CHECK (patient_id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "sessions_delete_own_or_staff"
-    ON public.sessions FOR DELETE
-    TO authenticated
-    USING (patient_id = auth.uid() OR public.is_staff());
-
--- Step 4: Create raw_clinical_data Storage Bucket natively via Supabase Postgres
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('raw_clinical_data', 'raw_clinical_data', false)
-ON CONFLICT (id) DO NOTHING;
-
--- Storage Bucket RLS Policies for secure data drops.
--- Files are stored as "<patientId>/session_<ts>.json", so the first path
--- segment is the owner's id. A patient may only touch their own folder;
--- staff may read every patient's raw data.
-CREATE POLICY "clinical_data_insert_own"
-    ON storage.objects FOR INSERT
-    TO authenticated
-    WITH CHECK (
-        bucket_id = 'raw_clinical_data'
-        AND (storage.foldername(name))[1] = auth.uid()::text
-    );
-
-CREATE POLICY "clinical_data_select_own_or_staff"
-    ON storage.objects FOR SELECT
-    TO authenticated
-    USING (
-        bucket_id = 'raw_clinical_data'
-        AND ((storage.foldername(name))[1] = auth.uid()::text OR public.is_staff())
-    );
-
-
-CREATE TABLE IF NOT EXISTS public.weekly_tasks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    week_start DATE NOT NULL,
-    title TEXT NOT NULL,
-    description TEXT,
-    icon TEXT DEFAULT 'fa-star',
-    target INTEGER DEFAULT 1,
-    reward INTEGER DEFAULT 1,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now())
-);
-
-CREATE INDEX idx_weekly_tasks_week_start
-    ON public.weekly_tasks(week_start);
-
-
-CREATE TABLE IF NOT EXISTS public.patient_tasks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE,
-    task_id    UUID REFERENCES public.weekly_tasks(id) ON DELETE CASCADE,
-
-    progress   INTEGER DEFAULT 0,
-    completed  BOOLEAN DEFAULT false,
-    claimed_at TIMESTAMP WITH TIME ZONE,
-
-    -- เพิ่ม week_start เพื่อ filter สัปดาห์ได้ตรงๆ ไม่ต้อง join
-    week_start DATE NOT NULL DEFAULT date_trunc('week', now())::DATE,
-
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()),
-
-    CONSTRAINT unique_patient_task UNIQUE (patient_id, task_id)
-);
-
-CREATE INDEX idx_patient_tasks_week_start
-    ON public.patient_tasks(patient_id, week_start);
-
-
--- RLS
-ALTER TABLE public.weekly_tasks ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.patient_tasks ENABLE ROW LEVEL SECURITY;
-
--- weekly_tasks are shared catalogue content: every signed-in user may read
--- them, but only staff may create / change / remove them.
-CREATE POLICY "weekly_tasks_select_all"
-    ON public.weekly_tasks FOR SELECT TO authenticated USING (true);
-
-CREATE POLICY "weekly_tasks_write_staff"
-    ON public.weekly_tasks FOR ALL TO authenticated
-    USING (public.is_staff())
-    WITH CHECK (public.is_staff());
-
--- patient_tasks are per-patient progress: a patient sees / updates only their
--- own rows; staff see everyone's.
-CREATE POLICY "patient_tasks_select_own_or_staff"
-    ON public.patient_tasks FOR SELECT TO authenticated
-    USING (patient_id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "patient_tasks_insert_own_or_staff"
-    ON public.patient_tasks FOR INSERT TO authenticated
-    WITH CHECK (patient_id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "patient_tasks_update_own_or_staff"
-    ON public.patient_tasks FOR UPDATE TO authenticated
-    USING (patient_id = auth.uid() OR public.is_staff())
-    WITH CHECK (patient_id = auth.uid() OR public.is_staff());
-
-CREATE POLICY "patient_tasks_delete_own_or_staff"
-    ON public.patient_tasks FOR DELETE TO authenticated
-    USING (patient_id = auth.uid() OR public.is_staff());
-
-
+-- 5. Secure Task Reward Claiming:
+-- A reward is an immutable, one-time ledger entry.  Keep this table private;
+-- the SECURITY DEFINER claim function below is the only writer.
 ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS stars INTEGER DEFAULT 0;
-
 ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS target_reps INTEGER DEFAULT 15;
 ALTER TABLE public.patients ADD COLUMN IF NOT EXISTS hold_duration_ms INTEGER DEFAULT 2000;
 
--- A reward is an immutable, one-time ledger entry.  Keep this table private;
--- the SECURITY DEFINER claim function below is the only writer.
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'patient_tasks'
+          AND column_name = 'claimed_at'
+    ) THEN
+        ALTER TABLE public.patient_tasks
+            ADD COLUMN claimed_at TIMESTAMP WITH TIME ZONE;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.task_reward_claims (
     patient_id UUID NOT NULL REFERENCES public.patients(id) ON DELETE CASCADE,
     task_id UUID NOT NULL REFERENCES public.weekly_tasks(id) ON DELETE CASCADE,
@@ -386,13 +224,15 @@ CREATE TRIGGER trg_guard_patient_task_progress
     BEFORE INSERT OR UPDATE ON public.patient_tasks
     FOR EACH ROW EXECUTE FUNCTION public.guard_patient_task_progress();
 
--- Secure Task Reward Claiming:
--- Atomically mark a completed task as claimed before changing the patient's
--- balance. The claimed_at NULL predicate makes concurrent/retried claims pay
--- at most once.
+-- Computes completion from sessions and records a unique ledger entry before
+-- changing the patient's balance.  The row lock plus primary key makes a
+-- concurrent/retried claim pay at most once.
 CREATE OR REPLACE FUNCTION public.claim_task_reward(p_patient_id UUID, p_task_id UUID)
 RETURNS integer AS $$
 DECLARE
+    v_reward integer := 0;
+    v_target integer := 0;
+    v_actual_progress integer := 0;
     v_claimed_reward integer;
 BEGIN
     IF auth.uid() IS NULL THEN
@@ -404,29 +244,43 @@ BEGIN
         RAISE EXCEPTION 'Access denied';
     END IF;
 
-    -- This flag lets the protected trigger distinguish this trusted operation
-    -- from a direct patient UPDATE while retaining the caller identity check.
-    PERFORM set_config('ctar.allow_reward_claim', 'on', true);
-
-    UPDATE public.patient_tasks AS pt
-    SET claimed_at = timezone('utc', now())
-    FROM public.weekly_tasks AS wt
-    WHERE pt.patient_id = p_patient_id
-      AND pt.task_id = p_task_id
-      AND pt.completed = true
-      AND pt.claimed_at IS NULL
-      AND wt.id = pt.task_id
-    RETURNING COALESCE(wt.reward, 1) INTO v_claimed_reward;
+    -- Lock the assignment so concurrent claims serialize on this task.
+    SELECT COALESCE(wt.reward, 1), GREATEST(COALESCE(wt.target, 1), 0)
+    INTO v_reward, v_target
+    FROM public.patient_tasks pt
+    JOIN public.weekly_tasks wt ON wt.id = pt.task_id
+    WHERE pt.patient_id = p_patient_id AND pt.task_id = p_task_id;
 
     IF NOT FOUND THEN
         RAISE EXCEPTION 'Task not found or not yet marked as completed';
     END IF;
 
-    UPDATE public.patients
-    SET stars = COALESCE(stars, 0) + v_claimed_reward
-    WHERE id = p_patient_id;
+    PERFORM 1
+    FROM public.patient_tasks pt
+    WHERE pt.patient_id = p_patient_id AND pt.task_id = p_task_id
+    FOR UPDATE;
+
+    v_actual_progress := public.patient_task_actual_progress(p_patient_id, p_task_id);
+    IF v_actual_progress < v_target THEN
+        RAISE EXCEPTION 'Task not found or not yet marked as completed';
+    END IF;
+
+    INSERT INTO public.task_reward_claims (patient_id, task_id, reward)
+    VALUES (p_patient_id, p_task_id, v_reward)
+    ON CONFLICT (patient_id, task_id) DO NOTHING
+    RETURNING reward INTO v_claimed_reward;
+
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Patient not found';
+        RETURN 0;
+    END IF;
+
+    IF v_claimed_reward > 0 THEN
+        UPDATE public.patients
+        SET stars = COALESCE(stars, 0) + v_claimed_reward
+        WHERE id = p_patient_id;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Patient not found';
+        END IF;
     END IF;
 
     RETURN v_claimed_reward;
@@ -443,7 +297,7 @@ GRANT UPDATE (first_name, last_name, dob, target_reps, hold_duration_ms) ON TABL
 REVOKE EXECUTE ON FUNCTION public.claim_task_reward(UUID, UUID) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.claim_task_reward(UUID, UUID) TO authenticated;
 
--- Secured add_stars fallback:
+-- 6. Secured add_stars fallback:
 -- Only self or staff, with rate/amount sanity cap (1 to 50 stars per call)
 CREATE OR REPLACE FUNCTION public.add_stars(patient_id UUID, amount INTEGER)
 RETURNS void AS $$
@@ -470,7 +324,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 REVOKE EXECUTE ON FUNCTION public.add_stars(UUID, INTEGER) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.add_stars(UUID, INTEGER) TO authenticated;
 
--- Step 5: Sessions Integrity Constraints
+-- 7. Sessions Integrity Constraints
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -482,7 +336,7 @@ BEGIN
     END IF;
 END $$;
 
--- Step 6: Clinic Patients Aggregated Summary View (Solves N+1 Query bottleneck)
+-- 8. Clinic Patients Aggregated Summary View (Solves N+1 Query bottleneck)
 -- Run this view with the caller's privileges so the patients/sessions RLS
 -- policies continue to apply to every query through the view.
 CREATE OR REPLACE VIEW public.clinic_patients_summary

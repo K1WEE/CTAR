@@ -2,6 +2,11 @@ import { Injectable, signal, NgZone } from '@angular/core';
 
 export type ConnectionState = 'Disconnected' | 'Scanning' | 'Connected';
 
+// The device streams at 20Hz. Five missed frames are enough to stop using the
+// last force value while still allowing a short Bluetooth scheduling hiccup.
+const MAX_VALID_FORCE_NEWTONS = 200;
+const SAMPLE_TIMEOUT_MS = 250;
+
 @Injectable({
   providedIn: 'root'
 })
@@ -10,6 +15,8 @@ export class BleService {
   public connectionState = signal<ConnectionState>('Disconnected');
   public deviceName = signal<string>('No Device');
   public error = signal<string | null>(null);
+  /** Timestamp of the most recent valid force sample, or null until one arrives. */
+  public lastSampleAt = signal<number | null>(null);
 
   // Core ESP32 Prototype UUID bindings
   private readonly SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
@@ -138,6 +145,7 @@ export class BleService {
       this.connectionState.set('Connected');
       this.deviceName.set('Mock CTAR Device');
       this.error.set(null);
+      this.lastSampleAt.set(null);
     });
 
     this.addSimulationListeners();
@@ -161,6 +169,7 @@ export class BleService {
       }
 
       this.ngZone.run(() => {
+        this.lastSampleAt.set(Date.now());
         if (this.onDataReceived) {
           this.onDataReceived(Number(force.toFixed(1)));
         }
@@ -180,6 +189,7 @@ export class BleService {
 
     this.error.set(null);
     this.connectionState.set('Scanning');
+    this.lastSampleAt.set(null);
 
     try {
       this.device = await (navigator as any).bluetooth.requestDevice({
@@ -238,7 +248,16 @@ export class BleService {
     this.ngZone.run(() => {
       this.connectionState.set('Disconnected');
       this.deviceName.set('No Device');
+      this.lastSampleAt.set(null);
     });
+  }
+
+  /** Whether a valid force sample has arrived recently enough for game logic. */
+  public isSampleFresh(now = Date.now()): boolean {
+    const lastSample = this.lastSampleAt();
+    if (lastSample === null) return false;
+    const age = now - lastSample;
+    return age >= 0 && age <= SAMPLE_TIMEOUT_MS;
   }
 
   public setMockSqueezing(squeezing: boolean) {
@@ -253,7 +272,21 @@ export class BleService {
     const value: DataView = event.target.value;
     
     if (value.byteLength >= 4) {
-      const forceValue = value.getFloat32(0, true);
+      let forceValue: number;
+      try {
+        forceValue = value.getFloat32(0, true);
+      } catch {
+        return;
+      }
+
+      // A malformed float must never become the current force. Negative,
+      // non-finite, and physically implausible readings are discarded; the
+      // freshness timeout then pauses the game if valid samples stop arriving.
+      if (!Number.isFinite(forceValue) || forceValue < 0 || forceValue > MAX_VALID_FORCE_NEWTONS) {
+        return;
+      }
+
+      this.lastSampleAt.set(Date.now());
       this.ngZone.run(() => {
         if (this.onDataReceived) {
           this.onDataReceived(forceValue);

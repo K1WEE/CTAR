@@ -8,6 +8,15 @@ export interface DataPoint {
   force: number;
 }
 
+export interface SessionSnapshot {
+  readonly id: string;
+  readonly rawData: ReadonlyArray<DataPoint>;
+  readonly durationSeconds: number;
+  readonly reps: number;
+  readonly maxForce: number;
+  readonly avgForce: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -34,24 +43,28 @@ public getSessionDurationSeconds() {
   return Math.round((end - start) / 1000);
 }
 
-  private readonly REP_THRESHOLD = 40;
-  private readonly REP_DROP_THRESHOLD = 20;
-  private isInRep = false;
-
   private dataHistory: DataPoint[] = [];
   private sessionStartTime: number = 0;
+  private sessionId = this.createSessionId();
+  private finalizedSnapshot: SessionSnapshot | null = null;
+  private sessionSnapshotSaved = false;
+  private readonly SESSION_SAVED_STORAGE_PREFIX = 'ctar_session_snapshot_saved:';
 
   constructor(private bleService: BleService, private ngZone: NgZone) {
 
-    // reset เมื่อ connect / clear calibration เมื่อ disconnect
+    // Preserve session and calibration during temporary BLE dropouts / reconnects
     effect(() => {
       const state = this.bleService.connectionState();
-      if (state === 'Connected') {
-        this.resetSession();
-      } else if (state === 'Disconnected') {
-        this.calibrationMaxForce.set(0);
+      if (state === 'Disconnected') {
+        // Drop instantaneous live force to 0 for UI safety, but preserve session history & calibration
+        this.currentForce.set(0);
+      } else if (state === 'Connected') {
+        // Only start session timer if it hasn't started yet
+        if (this.sessionStartTime === 0) {
+          this.sessionStartTime = Date.now();
+        }
       }
-    });
+    }, { allowSignalWrites: true });
 
     // รับค่า force จาก BLE
     this.bleService.onDataReceived = (force: number) => {
@@ -60,12 +73,90 @@ public getSessionDurationSeconds() {
   }
 
   public resetSession() {
+    this.sessionId = this.createSessionId();
+    this.finalizedSnapshot = null;
+    this.sessionSnapshotSaved = false;
     this.currentForce.set(0);
     this.peakForce.set(0);
     this.repCount.set(0);
     this.dataHistory = [];
-    this.isInRep = false;
     this.sessionStartTime = Date.now();
+  }
+
+  /**
+   * Captures one stable view of the completed session for comparison and
+   * persistence. A repeated summary navigation receives the same snapshot,
+   * even if a BLE callback arrives while the page is loading.
+   */
+  public getSessionSnapshot(): SessionSnapshot {
+    if (this.finalizedSnapshot) return this.finalizedSnapshot;
+
+    const rawData = Object.freeze(
+      this.dataHistory.map((dataPoint) => Object.freeze({ ...dataPoint }))
+    );
+    const avgForce = rawData.length > 0
+      ? rawData.reduce((total, dataPoint) => total + dataPoint.force, 0) / rawData.length
+      : 0;
+
+    this.finalizedSnapshot = Object.freeze({
+      id: this.sessionId,
+      rawData,
+      durationSeconds: this.getSessionDurationSeconds(),
+      reps: this.repCount(),
+      maxForce: this.peakForce(),
+      avgForce
+    });
+
+    return this.finalizedSnapshot;
+  }
+
+  /**
+   * Kept as a compatibility alias for callers that used the original API.
+   */
+  public finalizeSession(): SessionSnapshot {
+    return this.getSessionSnapshot();
+  }
+
+  /**
+   * Marks the immutable snapshot as persisted. This is intentionally called
+   * only after the uploader reports success, including an offline queue write.
+   */
+  public markSessionFinalized(): void {
+    this.sessionSnapshotSaved = true;
+
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem(
+          `${this.SESSION_SAVED_STORAGE_PREFIX}${this.sessionId}`,
+          'true'
+        );
+      }
+    } catch {
+      // In-memory state still protects this app lifecycle if storage is unavailable.
+    }
+  }
+
+  public hasSessionSnapshotSaved(): boolean {
+    if (this.sessionSnapshotSaved) return true;
+
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        this.sessionSnapshotSaved = sessionStorage.getItem(
+          `${this.SESSION_SAVED_STORAGE_PREFIX}${this.sessionId}`
+        ) === 'true';
+      }
+    } catch {
+      // Session storage is an optimization; the in-memory state is authoritative.
+    }
+
+    return this.sessionSnapshotSaved;
+  }
+
+  private createSessionId(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   }
 
   private processForce(force: number) {
@@ -80,14 +171,6 @@ public getSessionDurationSeconds() {
     // peak
     if (force > this.peakForce()) {
       this.peakForce.set(force);
-    }
-
-    // rep logic
-    if (force > this.REP_THRESHOLD && !this.isInRep) {
-      this.isInRep = true;
-    } else if (force < this.REP_DROP_THRESHOLD && this.isInRep) {
-      this.isInRep = false;
-      this.repCount.update(c => c + 1);
     }
 
     const now = Date.now();

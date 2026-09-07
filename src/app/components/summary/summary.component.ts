@@ -12,8 +12,8 @@ import { TaskService } from '../../services/task.service';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="min-h-screen p-4 flex items-center justify-center">
-      <div class="max-w-2xl w-full bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-md border border-slate-200 dark:border-slate-700">
+    <div class="min-h-screen p-4 py-6 flex items-start sm:items-center justify-center overflow-y-auto">
+      <div class="my-2 sm:my-0 max-w-2xl w-full bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 shadow-md border border-slate-200 dark:border-slate-700">
         
         <div class="text-center mb-8">
           <div class="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-200 dark:border-emerald-500/30">
@@ -59,8 +59,12 @@ import { TaskService } from '../../services/task.service';
             </div>
           </div>
 
-          <div *ngIf="saveError" class="bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 p-4 rounded-xl text-center text-base">
-            <i class="fa-solid fa-circle-exclamation mr-1"></i> {{ saveError }}
+          <div *ngIf="isOfflineSaved" role="status" class="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 p-4 rounded-xl text-center text-base font-semibold">
+            <i class="fa-solid fa-cloud-arrow-up mr-2" aria-hidden="true"></i> {{ i18n.t('summary.savedOffline') }}
+          </div>
+
+          <div *ngIf="saveError" role="alert" class="bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-300 p-4 rounded-xl text-center text-base">
+            <i class="fa-solid fa-circle-exclamation mr-1" aria-hidden="true"></i> {{ saveError }}
           </div>
 
           <div class="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 text-center">
@@ -78,6 +82,7 @@ import { TaskService } from '../../services/task.service';
 })
 export class SummaryComponent implements OnInit {
   public isSaving = true;
+  public isOfflineSaved = false;
   public saveError = '';
   public i18n = inject(I18nService);
 
@@ -109,9 +114,13 @@ export class SummaryComponent implements OnInit {
       return;
     }
 
-    this.currentStats.duration = this.ctar.getSessionDurationSeconds();
-    this.currentStats.reps = this.ctar.repCount();
-    this.currentStats.maxForce = this.ctar.peakForce();
+    // Freeze all values before awaiting the previous-session query. BLE data
+    // can still arrive during that await, so reading stats and raw samples at
+    // separate times could otherwise upload mismatched session metadata.
+    const snapshot = this.ctar.getSessionSnapshot();
+    this.currentStats.duration = snapshot.durationSeconds;
+    this.currentStats.reps = snapshot.reps;
+    this.currentStats.maxForce = snapshot.maxForce;
 
     try {
       const prevSession = await this.dataSync.fetchUserPreviousSession(user.id);
@@ -125,28 +134,36 @@ export class SummaryComponent implements OnInit {
       console.warn("Could not fetch previous session for comparison", e);
     }
 
-    const rawData = this.ctar.getDataHistory();
-    if (rawData.length > 0) {
-      const avgForce = rawData.reduce((acc, curr) => acc + curr.force, 0) / rawData.length;
-      const success = await this.dataSync.uploadSessionData(
+    const rawData = snapshot.rawData;
+    // Re-check after the previous-session await so a second summary instance
+    // cannot repeat persistence after the first one has finished.
+    if (rawData.length > 0 && !this.ctar.hasSessionSnapshotSaved()) {
+      const uploadResult = await this.dataSync.uploadSessionData(
         user.id, 
         rawData, 
         this.currentStats.maxForce, 
-        avgForce,
+        snapshot.avgForce,
         this.currentStats.reps, 
-        this.currentStats.duration
+        this.currentStats.duration,
+        snapshot.id
       );
 
-      if (!success) {
-  this.saveError = this.i18n.t('error.saveFailed');
-} else {
-  await this.taskService.updateTasksAfterSession(user.id, {
-    maxForce:        this.currentStats.maxForce,
-    durationMinutes: this.currentStats.duration / 60,
-    reps:            this.currentStats.reps,
-  });
-}
-    } else {
+      if (!uploadResult.success) {
+        this.saveError = this.i18n.t('error.saveFailed');
+      } else {
+        this.ctar.markSessionFinalized();
+        if (uploadResult.isOffline) {
+          this.isOfflineSaved = true;
+        }
+        if (!uploadResult.alreadyProcessed) {
+          await this.taskService.updateTasksAfterSession(user.id, {
+            maxForce:        this.currentStats.maxForce,
+            durationMinutes: this.currentStats.duration / 60,
+            reps:            this.currentStats.reps,
+          });
+        }
+      }
+    } else if (rawData.length === 0) {
       this.saveError = this.i18n.t('error.noData');
     }
 
@@ -155,10 +172,12 @@ export class SummaryComponent implements OnInit {
     // Play final session complete voice cue if not muted
     const isMuted = localStorage.getItem('zen_balloon_muted') === 'true';
     if (!isMuted) {
-      const lang = this.i18n.currentLang();
-      const path = `/assets/audio/${lang}/cue_session_complete.mp3`;
-      const audio = new Audio(path);
-      audio.play().catch(err => console.warn('Failed to play session complete voice-over:', err));
+      const lang = this.i18n.voiceLanguage();
+      if (lang) {
+        const path = `/assets/audio/${lang}/cue_session_complete.mp3`;
+        const audio = new Audio(path);
+        audio.play().catch(err => console.warn('Failed to play session complete voice-over:', err));
+      }
     }
   }
 

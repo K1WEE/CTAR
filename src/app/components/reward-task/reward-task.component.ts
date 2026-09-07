@@ -156,7 +156,7 @@ interface LeaderboardEntry {
       <ng-template #noTasks>
         <div class="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-6 border border-slate-200 dark:border-white/5 text-center text-slate-500">
           <i class="fa-solid fa-clipboard-list text-2xl mb-2 opacity-50"></i>
-          <p class="text-base font-semibold">ไม่มีภารกิจในขณะนี้</p>
+          <p class="text-base font-semibold">{{ taskLoadMessage || 'ไม่มีภารกิจในขณะนี้' }}</p>
         </div>
       </ng-template>
 
@@ -525,6 +525,7 @@ export class RewardTasksComponent implements OnInit, OnDestroy {
   }
 
   tasks: RewardTask[] = [];
+  taskLoadMessage = '';
   totalStars = 0;
 
   showLeaderboard = false;
@@ -541,7 +542,10 @@ export class RewardTasksComponent implements OnInit, OnDestroy {
     const user = this.supabase.currentUser();
     if (!user) return;
 
-    await this.taskService.createAdaptiveTasksIfNeeded(user.id);
+    const taskProvision = await this.taskService.createAdaptiveTasksIfNeeded(user.id);
+    if ('message' in taskProvision) {
+      this.taskLoadMessage = taskProvision.message;
+    }
 
     const weekStart = this.getWeekStart();
 
@@ -568,6 +572,7 @@ export class RewardTasksComponent implements OnInit, OnDestroy {
 
     if (tasksResult.error) {
       console.error(tasksResult.error);
+      this.taskLoadMessage = 'ยังโหลดภารกิจของคุณไม่ได้ กรุณาลองใหม่อีกครั้ง';
       return;
     }
 
